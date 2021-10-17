@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"gomodules.xyz/cert"
 	"os"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -34,32 +37,48 @@ HTUsNM2cNy69KwgxR0KA4H6mFEoPWlk8ojFTSxCIieWzsv95Pdm6
 `
 
 func main() {
-	var rest = []byte(crt)
+	certs, err := cert.ParseRootCAs([]byte(crt))
+	if err != nil {
+		panic(err)
+	}
+	for _, c := range certs {
+		fmt.Println(c.SerialNumber.String(), c.Subject.String())
+	}
+}
+
+// Detect Self Signed cert
+// https://security.stackexchange.com/a/162263
+func ParseRootCAs(rest []byte) ([]*x509.Certificate, error) {
+	var certs []*x509.Certificate
+
+	var block *pem.Block
 	for {
-		var block *pem.Block
 		block, rest = pem.Decode(rest)
-		if block == nil || block.Type != "CERTIFICATE" {
-			panic("failed to parse certificate PEM")
+		if block == nil {
+			// panic("failed to parse certificate PEM")
+			break
+		}
+		if block.Type != "CERTIFICATE" {
+			// panic("failed to parse certificate PEM")
+			continue
 		}
 
 		c, err := x509.ParseCertificate(block.Bytes)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
-		fmt.Println(c.IsCA, c.Subject.String())
-
-		if len(rest) == 0 {
-			break
+		if !c.IsCA {
+			continue
+		}
+		if !reflect.DeepEqual(c.Issuer, c.Subject) {
+			// fmt.Println("Subject and Issuer does not match")
+			continue
+		}
+		if len(c.AuthorityKeyId) == 0 || bytes.Equal(c.SubjectKeyId, c.AuthorityKeyId) {
+			certs = append(certs, c)
 		}
 	}
-	//
-	//certs, err := x509.ParseCertificates([]byte(crt))
-	//if err != nil {
-	//	panic(err)
-	//}
-	//for _, c := range certs {
-	//	fmt.Println(c.IsCA, c.Subject.String())
-	//}
+	return certs, nil
 }
 
 func conv(r string) string {
@@ -77,7 +96,7 @@ func main3() {
 	fmt.Println(conv(`^([^\ :]*)\ \/domains\/espress\/?(.*$) \1\ /\2`))
 }
 
-func main2() {
+func main34() {
 	filename := "/home/tamal/go/src/kubeops.dev/csi-driver-ca-certificates/examples/cacerts/etc/ssl/certs/java/cacerts"
 	f, err := os.Open(filename)
 	if err != nil {
