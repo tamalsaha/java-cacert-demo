@@ -1,12 +1,15 @@
 package main
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
-	keystore "github.com/pavel-v-chernykh/keystore-go/v4"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	keystore "github.com/pavel-v-chernykh/keystore-go/v4"
 )
 
 const crt = `-----BEGIN CERTIFICATE-----
@@ -30,6 +33,35 @@ HTUsNM2cNy69KwgxR0KA4H6mFEoPWlk8ojFTSxCIieWzsv95Pdm6
 -----END CERTIFICATE-----
 `
 
+func main() {
+	var rest = []byte(crt)
+	for {
+		var block *pem.Block
+		block, rest = pem.Decode(rest)
+		if block == nil || block.Type != "CERTIFICATE" {
+			panic("failed to parse certificate PEM")
+		}
+
+		c, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(c.IsCA, c.Subject.String())
+
+		if len(rest) == 0 {
+			break
+		}
+	}
+	//
+	//certs, err := x509.ParseCertificates([]byte(crt))
+	//if err != nil {
+	//	panic(err)
+	//}
+	//for _, c := range certs {
+	//	fmt.Println(c.IsCA, c.Subject.String())
+	//}
+}
+
 func conv(r string) string {
 	r = strings.Replace(r, `^([^\ :]*)\ `, `^`, 1)
 	r = strings.Replace(r, `\1\ `, ``, 1)
@@ -41,7 +73,7 @@ func conv(r string) string {
 	return r
 }
 
-func main() {
+func main3() {
 	fmt.Println(conv(`^([^\ :]*)\ \/domains\/espress\/?(.*$) \1\ /\2`))
 }
 
