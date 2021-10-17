@@ -5,14 +5,21 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"gomodules.xyz/cert"
+	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"gomodules.xyz/cert"
+	cmv1_api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	cmv1_cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1"
 	keystore "github.com/pavel-v-chernykh/keystore-go/v4"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 const crt = `-----BEGIN CERTIFICATE-----
@@ -37,6 +44,22 @@ HTUsNM2cNy69KwgxR0KA4H6mFEoPWlk8ojFTSxCIieWzsv95Pdm6
 `
 
 func main() {
+	masterURL := ""
+	kubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
+	kubeconfigPath = "/home/tamal/Downloads/mysql-test-kubeconfig.yaml"
+
+	config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
+	if err != nil {
+		log.Fatalf("Could not get Kubernetes config: %s", err)
+	}
+
+	kc := kubernetes.NewForConfigOrDie(config)
+	cmc := cmv1_cs.NewForConfigOrDie(config)
+	var issuer *cmv1_api.Issuer
+	issuer.Spec.CA.SecretName
+
+	var caissuer *cmv1_api.ClusterIssuer
+
 	certs, err := cert.ParseRootCAs([]byte(crt))
 	if err != nil {
 		panic(err)
