@@ -16,6 +16,7 @@ spec:
   volumes:
   - name: tls
     csi:
+      readOnly: true
       driver: csi.cert-manager.io
       volumeAttributes:
         csi.cert-manager.io/issuer-name: mongo-ca-issuer
