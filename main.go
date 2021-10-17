@@ -13,16 +13,35 @@ import (
 	"strconv"
 	"strings"
 
-	"gomodules.xyz/cert"
 	cmv1_api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	cmv1_cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1"
 	keystore "github.com/pavel-v-chernykh/keystore-go/v4"
+	"gomodules.xyz/cert"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 )
 
-const crt = `-----BEGIN CERTIFICATE-----
+const selfsigned_crt = `-----BEGIN CERTIFICATE-----
+MIIC3jCCAcagAwIBAgIRAJSoxqtKjIrJHtl3pZTNNwUwDQYJKoZIhvcNAQELBQAw
+ADAeFw0yMTEwMTcwNjEzMjFaFw0yMjAxMTUwNjEzMjFaMAAwggEiMA0GCSqGSIb3
+DQEBAQUAA4IBDwAwggEKAoIBAQDP2RLFpM8/fMGBHVX6DTEyRVFuYMH+2A8UFJoD
+tPCp+SePlltt3p98saAaZ/NJGWdtivDLIzK7QanELBN0rg9cRHUEmk8Umtn2U2FL
+5CizwnUBWzpctop0XXlo+B+2BGKAw8//vluv+ZIXPdjjmQGr0CQa8TRp4dWN5R2/
+TgA6n0XvM/pT3KljSjpPsJoVTD5FLmjed+YBFRUge3v00x+ZvG3Mxri/MDdLWX2I
+n2XJ8kkyy98XdSf7MjGVzMGbbSQaU9ZegSBZCQN23SnCsxAC2aI7ZWLO1YzjAPMt
+fUypvSfCBOkA9mYVEK5j21W84ot8OTSlUBhYA6yaeI0FfYelAgMBAAGjUzBRMA4G
+A1UdDwEB/wQEAwIFoDAMBgNVHRMBAf8EAjAAMDEGA1UdEQEB/wQnMCWCDSouZXhh
+bXBsZS5jb22CC2V4YW1wbGUuY29tggdmb28uY29tMA0GCSqGSIb3DQEBCwUAA4IB
+AQCmOzSNnKeMvBj5X7SBCAFOwg0YROPkbWnLLGjMMR1EvvRjHqB7cAL8Kh+E2ml8
+NtYKzSqw15PGSBgZM1rWHDuZDuaAYqGIgsSJRZhsNAMlcyfOeI3UCPjI1UIqwBI2
+4WxfBkzZxnspU0o/09e9c76NICiXXeSN/1Wuq40z9QzID6qD+kX3qT2kuJuhfvxH
+rVsW2gUshCyiEQRyT4k1XkEB7rwt/w12PSJjFXP5uea9PbYdkFMORS8ctDbLH66M
+kFwOpGutk2d34+mk4PwuAJ0wWwBRyLL+jJyUAQ0cpgHzadLieFN7g5hcIjCoT2Ya
+CZVBw5BuXV6QTSfYfm/BgsiQ
+-----END CERTIFICATE-----`
+
+const ca_crt = `-----BEGIN CERTIFICATE-----
 MIIDIzCCAgugAwIBAgIUfusT4Oj1uXMuUJ05AZG1gDz5px0wDQYJKoZIhvcNAQEL
 BQAwITEOMAwGA1UEAwwFbW9uZ28xDzANBgNVBAoMBmt1YmVkYjAeFw0yMDA4MDcw
 NDMyMzRaFw0yMTA4MDcwNDMyMzRaMCExDjAMBgNVBAMMBW1vbmdvMQ8wDQYDVQQK
@@ -44,6 +63,16 @@ HTUsNM2cNy69KwgxR0KA4H6mFEoPWlk8ojFTSxCIieWzsv95Pdm6
 `
 
 func main() {
+	certs, err := ParseRootCAs([]byte(selfsigned_crt))
+	if err != nil {
+		panic(err)
+	}
+	for _, c := range certs {
+		fmt.Println(c.SerialNumber.String(), c.Subject.String())
+	}
+}
+
+func main00() {
 	masterURL := ""
 	kubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
 	kubeconfigPath = "/home/tamal/Downloads/mysql-test-kubeconfig.yaml"
@@ -56,11 +85,10 @@ func main() {
 	kc := kubernetes.NewForConfigOrDie(config)
 	cmc := cmv1_cs.NewForConfigOrDie(config)
 	var issuer *cmv1_api.Issuer
-	issuer.Spec.CA.SecretName
-
 	var caissuer *cmv1_api.ClusterIssuer
+	fmt.Println(kc, cmc, issuer, caissuer)
 
-	certs, err := cert.ParseRootCAs([]byte(crt))
+	certs, err := cert.ParseRootCAs([]byte(ca_crt))
 	if err != nil {
 		panic(err)
 	}
@@ -90,9 +118,9 @@ func ParseRootCAs(rest []byte) ([]*x509.Certificate, error) {
 		if err != nil {
 			return nil, err
 		}
-		if !c.IsCA {
-			continue
-		}
+		//if !c.IsCA {
+		//	continue
+		//}
 		if !reflect.DeepEqual(c.Issuer, c.Subject) {
 			// fmt.Println("Subject and Issuer does not match")
 			continue
