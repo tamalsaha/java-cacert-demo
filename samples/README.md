@@ -16,3 +16,10 @@ kubectl apply -f samples/self-signed/cert-selfsigned.yaml
 - https://nginx.org/en/docs/http/configuring_https_servers.html#chains
 - https://www.cyberciti.biz/faq/configure-nginx-to-use-only-tls-1-2-and-1-3/
 - https://www.techrepublic.com/article/how-to-enable-ssl-on-nginx/
+
+## cert-manager CSI driver
+
+```
+helm repo add jetstack https://charts.jetstack.io --force-update
+helm upgrade -i -n cert-manager cert-manager-csi-driver jetstack/cert-manager-csi-driver --wait
+```
