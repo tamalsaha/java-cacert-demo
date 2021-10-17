@@ -6,8 +6,10 @@ metadata:
 data:
   ssl.conf: |
     server {
-        listen 443 http2 ssl;
-        server_name *.svc.cluster.local;
+        listen 80;
+        listen 443 ssl;
+        server_name 172.18.0.2;
+        root /usr/share/nginx/html;
 
         ssl_certificate /tls/tls.crt;
         ssl_certificate_key /tls/tls.key;
@@ -49,6 +51,7 @@ spec:
           volumeAttributes:
             csi.cert-manager.io/issuer-name: mongo-ca-issuer
             csi.cert-manager.io/dns-names: nginx.demo.svc.cluster.local
+            csi.cert-manager.io/fs-group: "101"
       - name: ssl-config
         configMap:
           name: nginx-ssl-config
