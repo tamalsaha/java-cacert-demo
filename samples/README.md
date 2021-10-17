@@ -5,7 +5,6 @@ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5
 kubectl create ns demo
 
 ## self-signed CA
-kubectl apply -f samples/issuer-selfsigned.yaml
 
-
-
+kubectl apply -f samples/self-signed/issuer-selfsigned.yaml
+kubectl apply -f samples/self-signed/cert-selfsigned.yaml
