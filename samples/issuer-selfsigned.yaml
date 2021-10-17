@@ -1,0 +1,10 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: issuer-selfsigned
+  namespace: demo
+spec:
+  selfSigned: {}
+
+  # ca:
+  #   secretName: mongo-ca
