@@ -41,6 +41,26 @@ kFwOpGutk2d34+mk4PwuAJ0wWwBRyLL+jJyUAQ0cpgHzadLieFN7g5hcIjCoT2Ya
 CZVBw5BuXV6QTSfYfm/BgsiQ
 -----END CERTIFICATE-----`
 
+const selfsigned_ca_crt = `-----BEGIN CERTIFICATE-----
+MIIDADCCAeigAwIBAgIRAK+AG4IIvfCKiGPuuHPVsiwwDQYJKoZIhvcNAQELBQAw
+ADAeFw0yMTEwMTcwNzMzMDFaFw0yMjAxMTUwNzMzMDFaMAAwggEiMA0GCSqGSIb3
+DQEBAQUAA4IBDwAwggEKAoIBAQDP2RLFpM8/fMGBHVX6DTEyRVFuYMH+2A8UFJoD
+tPCp+SePlltt3p98saAaZ/NJGWdtivDLIzK7QanELBN0rg9cRHUEmk8Umtn2U2FL
+5CizwnUBWzpctop0XXlo+B+2BGKAw8//vluv+ZIXPdjjmQGr0CQa8TRp4dWN5R2/
+TgA6n0XvM/pT3KljSjpPsJoVTD5FLmjed+YBFRUge3v00x+ZvG3Mxri/MDdLWX2I
+n2XJ8kkyy98XdSf7MjGVzMGbbSQaU9ZegSBZCQN23SnCsxAC2aI7ZWLO1YzjAPMt
+fUypvSfCBOkA9mYVEK5j21W84ot8OTSlUBhYA6yaeI0FfYelAgMBAAGjdTBzMA4G
+A1UdDwEB/wQEAwICpDAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQ/WvJ4WCRU
++5LwiWBih0zHuG1UETAxBgNVHREBAf8EJzAlgg0qLmV4YW1wbGUuY29tggtleGFt
+cGxlLmNvbYIHZm9vLmNvbTANBgkqhkiG9w0BAQsFAAOCAQEAUzyhXvwlZBwzrWvP
+xBOT6BFANL/tAr/58vg8ah/hn5b2TVsmQNlYx3d9jye4n1gEUmxP/pjYJedvUzfn
+ske7WjfZfzgw5inkPznHqjBOp6wHNh7NFpEy3gkCFSQk6XyTbxFK6lkPMBcMvlPQ
+xKkHFaToqPhkUmK23+1U/ODB6EdjTqSbzmUVyOOPOZfI7N7ZtVIIe1JVT6xemgaC
+0tad59ve/p3PbMGyI6rYxnTwiopv2SoW4i3qExE+nYoUIcM6R4uVwvRo18AwAFlz
+qRm+WKJBnzCUNroHk5H2wn20rez4iJ5JZnnwWS+B9Sn8T63HBAeN7VBtw8rof+9h
+jwcYNQ==
+-----END CERTIFICATE-----`
+
 const ca_crt = `-----BEGIN CERTIFICATE-----
 MIIDIzCCAgugAwIBAgIUfusT4Oj1uXMuUJ05AZG1gDz5px0wDQYJKoZIhvcNAQEL
 BQAwITEOMAwGA1UEAwwFbW9uZ28xDzANBgNVBAoMBmt1YmVkYjAeFw0yMDA4MDcw
@@ -61,6 +81,19 @@ TISRT+2N9H0O9wJZtbpgXwy3mLR/yXhd0y6XHI9f4NXTxnG6K480eaJf5ng8wktQ
 HTUsNM2cNy69KwgxR0KA4H6mFEoPWlk8ojFTSxCIieWzsv95Pdm6
 -----END CERTIFICATE-----
 `
+
+func main() {
+	caCerts, certs, err := cert.ParseRootCAs([]byte(selfsigned_ca_crt))
+	if err != nil {
+		panic(err)
+	}
+	for _, c := range caCerts {
+		fmt.Println("ca", c.SerialNumber.String(), c.Subject.String())
+	}
+	for _, c := range certs {
+		fmt.Println("non-ca", c.SerialNumber.String(), c.Subject.String()) // Subject is ""
+	}
+}
 
 func main_selfsigned_crt() {
 	caCerts, certs, err := cert.ParseRootCAs([]byte(selfsigned_crt))
