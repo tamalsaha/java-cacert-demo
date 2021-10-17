@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cert-selfsigned
+  namespace: demo
+spec:
+  secretName: cert-selfsigned-tls
+  issuerRef:
+    name: issuer-selfsigned
+  dnsNames:
+  - '*.example.com'
+  - example.com
+  - foo.com
