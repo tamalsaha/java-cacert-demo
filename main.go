@@ -62,13 +62,16 @@ HTUsNM2cNy69KwgxR0KA4H6mFEoPWlk8ojFTSxCIieWzsv95Pdm6
 -----END CERTIFICATE-----
 `
 
-func main() {
-	certs, err := ParseRootCAs([]byte(selfsigned_crt))
+func main_selfsigned_crt() {
+	caCerts, certs, err := cert.ParseRootCAs([]byte(selfsigned_crt))
 	if err != nil {
 		panic(err)
 	}
+	for _, c := range caCerts {
+		fmt.Println("ca", c.SerialNumber.String(), c.Subject.String())
+	}
 	for _, c := range certs {
-		fmt.Println(c.SerialNumber.String(), c.Subject.String())
+		fmt.Println("non-ca", c.SerialNumber.String(), c.Subject.String()) // Subject is ""
 	}
 }
 
@@ -88,11 +91,11 @@ func main00() {
 	var caissuer *cmv1_api.ClusterIssuer
 	fmt.Println(kc, cmc, issuer, caissuer)
 
-	certs, err := cert.ParseRootCAs([]byte(ca_crt))
+	caCerts, _, err := cert.ParseRootCAs([]byte(ca_crt))
 	if err != nil {
 		panic(err)
 	}
-	for _, c := range certs {
+	for _, c := range caCerts {
 		fmt.Println(c.SerialNumber.String(), c.Subject.String())
 	}
 }
