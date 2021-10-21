@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"log"
 	"os"
 	"path/filepath"
@@ -20,6 +21,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	cacerts_api "kubeops.dev/csi-driver-cacerts/apis/cacerts/v1alpha1"
 )
 
 const selfsigned_crt = `-----BEGIN CERTIFICATE-----
@@ -82,7 +84,40 @@ HTUsNM2cNy69KwgxR0KA4H6mFEoPWlk8ojFTSxCIieWzsv95Pdm6
 -----END CERTIFICATE-----
 `
 
+type CAGetter interface {
+	Init() error
+	GetCAs(key string) ([]*x509.Certificate, error)
+}
+
+type ObjectReference struct {
+	APIGroup  string `json:"apiGroup"`
+	Kind      string `json:"kind"`
+	Namespace string `json:"namespace,omitempty"`
+	Name      string `json:"name"`
+	Key       string `json:"key,omitempty"`
+}
+
+type ObjectKey struct {
+	APIGroup  string `json:"apiGroup"`
+	Kind      string `json:"kind"`
+	Namespace string `json:"namespace,omitempty"`
+	Name      string `json:"name"`
+	Key       string `json:"key,omitempty"`
+}
+
+var caCahce  = map[ObjectKey][]*x509.Certificate{}
+var caGetterFactory = map[schema.GroupKind]CAGetter{}
+
+
+
 func main() {
+	var p cacerts_api.CAProviderClass
+	fmt.Println(p)
+}
+
+
+
+func main22() {
 	caCerts, certs, err := cert.ParseRootCAs([]byte(selfsigned_ca_crt))
 	if err != nil {
 		panic(err)
