@@ -6,7 +6,9 @@ require (
 	github.com/jetstack/cert-manager v1.4.1
 	github.com/pavel-v-chernykh/keystore-go/v4 v4.1.0
 	gomodules.xyz/cert v1.4.1
+	k8s.io/apimachinery v0.22.2
 	k8s.io/client-go v0.22.0
+	kmodules.xyz/client-go v0.0.0-20211016043712-8f3e2dd50e7e
 	kubeops.dev/csi-driver-cacerts v0.0.0-20211020013806-a560fe08a5b9
 )
 
@@ -25,6 +27,7 @@ require (
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
+	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/mailru/easyjson v0.7.0 // indirect
@@ -43,7 +46,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/api v0.22.2 // indirect
 	k8s.io/apiextensions-apiserver v0.21.1 // indirect
-	k8s.io/apimachinery v0.22.2 // indirect
 	k8s.io/klog/v2 v2.9.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7 // indirect
 	k8s.io/utils v0.0.0-20210819203725-bdf08cb9a70a // indirect
