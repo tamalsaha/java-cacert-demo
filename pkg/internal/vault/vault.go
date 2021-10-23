@@ -20,6 +20,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"kmodules.xyz/client-go/tools/configreader"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -28,8 +29,6 @@ import (
 
 	vault "github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/sdk/helper/certutil"
-	corelisters "k8s.io/client-go/listers/core/v1"
-
 	v1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/jetstack/cert-manager/pkg/util/pki"
 )
@@ -38,7 +37,7 @@ var _ Interface = &Vault{}
 
 // ClientBuilder is a function type that returns a new Interface.
 // Can be used in tests to create a mock signer of Vault certificate requests.
-type ClientBuilder func(namespace string, secretsLister corelisters.SecretLister,
+type ClientBuilder func(namespace string, secretsLister configreader.ConfigReader,
 	issuer v1.GenericIssuer) (Interface, error)
 
 // Interface implements various high level functionality related to connecting
@@ -63,7 +62,7 @@ type Client interface {
 // Vault implements Interface and holds a Vault issuer, secrets lister and a
 // Vault client.
 type Vault struct {
-	secretsLister corelisters.SecretLister
+	secretsLister configreader.ConfigReader
 	issuer        v1.GenericIssuer
 	namespace     string
 
@@ -74,7 +73,7 @@ type Vault struct {
 // secrets lister.
 // Returned errors may be network failures and should be considered for
 // retrying.
-func New(namespace string, secretsLister corelisters.SecretLister, issuer v1.GenericIssuer) (Interface, error) {
+func New(namespace string, secretsLister configreader.ConfigReader, issuer v1.GenericIssuer) (Interface, error) {
 	v := &Vault{
 		secretsLister: secretsLister,
 		namespace:     namespace,

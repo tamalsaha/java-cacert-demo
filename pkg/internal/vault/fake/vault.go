@@ -18,16 +18,15 @@ limitations under the License.
 package fake
 
 import (
+	"kmodules.xyz/client-go/tools/configreader"
 	"time"
 
 	vault "github.com/hashicorp/vault/api"
-	corelisters "k8s.io/client-go/listers/core/v1"
-
 	v1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 )
 
 type Vault struct {
-	NewFn                           func(string, corelisters.SecretLister, v1.GenericIssuer) (*Vault, error)
+	NewFn                           func(string, configreader.ConfigReader, v1.GenericIssuer) (*Vault, error)
 	SignFn                          func([]byte, time.Duration) ([]byte, []byte, error)
 	IsVaultInitializedAndUnsealedFn func() error
 }
@@ -43,7 +42,7 @@ func New() *Vault {
 		},
 	}
 
-	v.NewFn = func(string, corelisters.SecretLister, v1.GenericIssuer) (*Vault, error) {
+	v.NewFn = func(string, configreader.ConfigReader, v1.GenericIssuer) (*Vault, error) {
 		return v, nil
 	}
 
@@ -64,13 +63,13 @@ func (v *Vault) WithSign(certPEM, caPEM []byte, err error) *Vault {
 }
 
 // WithNew sets the fake Vault's New function.
-func (v *Vault) WithNew(f func(string, corelisters.SecretLister, v1.GenericIssuer) (*Vault, error)) *Vault {
+func (v *Vault) WithNew(f func(string, configreader.ConfigReader, v1.GenericIssuer) (*Vault, error)) *Vault {
 	v.NewFn = f
 	return v
 }
 
 // New call NewFn and returns a pointer to the fake Vault.
-func (v *Vault) New(ns string, sl corelisters.SecretLister, iss v1.GenericIssuer) (*Vault, error) {
+func (v *Vault) New(ns string, sl configreader.ConfigReader, iss v1.GenericIssuer) (*Vault, error) {
 	_, err := v.NewFn(ns, sl, iss)
 	if err != nil {
 		return nil, err

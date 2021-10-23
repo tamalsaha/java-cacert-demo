@@ -105,17 +105,13 @@ type ObjectKey struct {
 	Key       string `json:"key,omitempty"`
 }
 
-var caCahce  = map[ObjectKey][]*x509.Certificate{}
+var caCahce = map[ObjectKey][]*x509.Certificate{}
 var caGetterFactory = map[schema.GroupKind]CAGetter{}
-
-
 
 func main() {
 	var p cacerts_api.CAProviderClass
 	fmt.Println(p)
 }
-
-
 
 func main22() {
 	caCerts, certs, err := cert.ParseRootCAs([]byte(selfsigned_ca_crt))

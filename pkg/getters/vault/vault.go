@@ -17,7 +17,7 @@ limitations under the License.
 package vault
 
 import (
-	corelisters "k8s.io/client-go/listers/core/v1"
+	"kmodules.xyz/client-go/tools/configreader"
 
 	apiutil "github.com/jetstack/cert-manager/pkg/api/util"
 	v1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
@@ -29,7 +29,7 @@ type Vault struct {
 	*controller.Context
 	issuer v1.GenericIssuer
 
-	secretsLister corelisters.SecretLister
+	secretsLister configreader.ConfigReader
 
 	// Namespace in which to read resources related to this Issuer from.
 	// For Issuers, this will be the namespace of the Issuer.
@@ -38,12 +38,10 @@ type Vault struct {
 }
 
 func NewVault(ctx *controller.Context, issuer v1.GenericIssuer) (issuer.Interface, error) {
-	secretsLister := ctx.KubeSharedInformerFactory.Core().V1().Secrets().Lister()
-
 	return &Vault{
 		Context:           ctx,
 		issuer:            issuer,
-		secretsLister:     secretsLister,
+		secretsLister:     configreader.New(ctx.Client),
 		resourceNamespace: ctx.IssuerOptions.ResourceNamespace(issuer),
 	}, nil
 }

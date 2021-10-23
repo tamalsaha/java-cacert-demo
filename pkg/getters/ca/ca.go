@@ -31,7 +31,7 @@ import (
 type CA struct {
 	*controller.Context
 	issuer        v1.GenericIssuer
-	secretsLister corelisters.SecretLister
+	secretsLister configreader.ConfigReader
 
 	// Namespace in which to read resources related to this Issuer from.
 	// For Issuers, this will be the namespace of the Issuer.
