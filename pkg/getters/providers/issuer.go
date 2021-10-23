@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
 	"gomodules.xyz/cert"
-	"kmodules.xyz/client-go/tools/configreader"
+	"kmodules.xyz/cert-manager-util/reader"
 )
 
 type CAGetterIssuer struct {
-	r   configreader.ConfigReader
+	r   reader.Reader
 	key lib.ObjectKey
 }
 
