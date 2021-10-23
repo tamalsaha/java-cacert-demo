@@ -188,7 +188,7 @@ github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1alpha2
 github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1alpha3
 github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1beta1
 github.com/jetstack/cert-manager/pkg/controller
-github.com/jetstack/cert-manager/pkg/internal/vault
+github.com/jetstack/cert-manager/pkg/internal/vault/fake
 github.com/jetstack/cert-manager/pkg/issuer
 github.com/jetstack/cert-manager/pkg/logs
 github.com/jetstack/cert-manager/pkg/metrics
@@ -197,6 +197,8 @@ github.com/jetstack/cert-manager/pkg/util/errors
 github.com/jetstack/cert-manager/pkg/util/kube
 github.com/jetstack/cert-manager/pkg/util/pki
 github.com/jetstack/cert-manager/pkg/util/profiling
+github.com/jetstack/cert-manager/test/unit/gen
+github.com/jetstack/cert-manager/test/unit/listers
 # github.com/json-iterator/go v1.1.11
 ## explicit; go 1.12
 github.com/json-iterator/go

@@ -3,13 +3,13 @@ package providers
 import (
 	"crypto/x509"
 	"fmt"
-	"github.com/tamalsaha/java-cacert-demo/getters/lib"
-	"kmodules.xyz/client-go/tools/configreader"
+	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
 	"gomodules.xyz/cert"
+	"kmodules.xyz/client-go/tools/configreader"
 )
 
 type CAGetterIssuer struct {
-	r configreader.ConfigReader
+	r   configreader.ConfigReader
 	key lib.ObjectKey
 }
 

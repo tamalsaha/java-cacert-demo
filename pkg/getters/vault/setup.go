@@ -23,7 +23,7 @@ import (
 	apiutil "github.com/jetstack/cert-manager/pkg/api/util"
 	v1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	cmmeta "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
-	vaultinternal "github.com/jetstack/cert-manager/pkg/internal/vault"
+	vaultinternal "github.com/tamalsaha/java-cacert-demo/pkg/internal/vault"
 	logf "github.com/jetstack/cert-manager/pkg/logs"
 )
 

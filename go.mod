@@ -3,6 +3,8 @@ module github.com/tamalsaha/java-cacert-demo
 go 1.17
 
 require (
+	github.com/hashicorp/vault/api v1.0.4
+	github.com/hashicorp/vault/sdk v0.1.13
 	github.com/jetstack/cert-manager v1.4.1
 	github.com/pavel-v-chernykh/keystore-go/v4 v4.1.0
 	gomodules.xyz/cert v1.4.1
@@ -46,8 +48,6 @@ require (
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hashicorp/vault/api v1.0.4 // indirect
-	github.com/hashicorp/vault/sdk v0.1.13 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/mailru/easyjson v0.7.0 // indirect
