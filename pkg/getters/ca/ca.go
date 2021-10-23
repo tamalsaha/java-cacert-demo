@@ -17,7 +17,7 @@ limitations under the License.
 package ca
 
 import (
-	corelisters "k8s.io/client-go/listers/core/v1"
+	"kmodules.xyz/client-go/tools/configreader"
 
 	apiutil "github.com/jetstack/cert-manager/pkg/api/util"
 	v1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
@@ -40,7 +40,7 @@ type CA struct {
 }
 
 func NewCA(ctx *controller.Context, issuer v1.GenericIssuer) (issuer.Interface, error) {
-	secretsLister := ctx.KubeSharedInformerFactory.Core().V1().Secrets().Lister()
+	secretsLister := configreader.New(ctx.Client)
 
 	return &CA{
 		Context:           ctx,
