@@ -11,7 +11,7 @@ require (
 	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2
 	k8s.io/client-go v0.22.0
-	kmodules.xyz/cert-manager-util v0.0.0-20211023093032-d746e9a7bc31
+	kmodules.xyz/cert-manager-util v0.0.0-20211023101034-1ec2c54398b0
 	kmodules.xyz/client-go v0.0.0-20211023080224-88313b8deed7
 	kubeops.dev/csi-driver-cacerts v0.0.0-20211020013806-a560fe08a5b9
 )

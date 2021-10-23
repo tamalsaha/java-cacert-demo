@@ -14,42 +14,42 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package reader
+package configreader
 
 import (
 	"context"
 	"fmt"
 	"reflect"
 
-	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	cmcs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	listers "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/pager"
+	api "kubeops.dev/csi-driver-cacerts/apis/cacerts/v1alpha1"
+	cs "kubeops.dev/csi-driver-cacerts/client/clientset/versioned"
+	listers "kubeops.dev/csi-driver-cacerts/client/listers/cacerts/v1alpha1"
 )
 
-var _ listers.IssuerNamespaceLister = &issuerNamespaceLister{}
+var _ listers.CAProviderClassNamespaceLister = &caProviderClassNamespaceLister{}
 
-// issuerNamespaceLister implements the NamespaceLister interface.
-type issuerNamespaceLister struct {
-	dc        cmcs.Interface
+// caProviderClassNamespaceLister implements the NamespaceLister interface.
+type caProviderClassNamespaceLister struct {
+	dc        cs.Interface
 	namespace string
 }
 
 // List lists all resources in the indexer for a given namespace.
-func (l *issuerNamespaceLister) List(selector labels.Selector) (ret []*cmapi.Issuer, err error) {
+func (l *caProviderClassNamespaceLister) List(selector labels.Selector) (ret []*api.CAProviderClass, err error) {
 	fn := func(ctx context.Context, opts metav1.ListOptions) (runtime.Object, error) {
-		return l.dc.CertmanagerV1().Issuers(l.namespace).List(ctx, opts)
+		return l.dc.CacertsV1alpha1().CAProviderClasses(l.namespace).List(ctx, opts)
 	}
 	opts := metav1.ListOptions{
 		LabelSelector: selector.String(),
 	}
 	err = pager.New(fn).EachListItem(context.TODO(), opts, func(obj runtime.Object) error {
-		o, ok := obj.(*cmapi.Issuer)
+		o, ok := obj.(*api.CAProviderClass)
 		if !ok {
-			return fmt.Errorf("expected *cmapi.Issuer, found %s", reflect.TypeOf(obj))
+			return fmt.Errorf("expected *api.CAProviderClass, found %s", reflect.TypeOf(obj))
 		}
 		ret = append(ret, o)
 		return nil
@@ -58,8 +58,8 @@ func (l *issuerNamespaceLister) List(selector labels.Selector) (ret []*cmapi.Iss
 }
 
 // Get retrieves a resource from the indexer for a given namespace and name.
-func (l *issuerNamespaceLister) Get(name string) (*cmapi.Issuer, error) {
-	obj, err := l.dc.CertmanagerV1().Issuers(l.namespace).Get(context.TODO(), name, metav1.GetOptions{})
+func (l *caProviderClassNamespaceLister) Get(name string) (*api.CAProviderClass, error) {
+	obj, err := l.dc.CacertsV1alpha1().CAProviderClasses(l.namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

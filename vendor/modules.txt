@@ -803,7 +803,7 @@ k8s.io/utils/integer
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/cert-manager-util v0.0.0-20211023093032-d746e9a7bc31
+# kmodules.xyz/cert-manager-util v0.0.0-20211023101034-1ec2c54398b0
 ## explicit; go 1.17
 kmodules.xyz/cert-manager-util/reader
 # kmodules.xyz/client-go v0.0.0-20211023080224-88313b8deed7
@@ -813,6 +813,14 @@ kmodules.xyz/client-go/tools/configreader
 ## explicit; go 1.17
 kubeops.dev/csi-driver-cacerts/apis/cacerts
 kubeops.dev/csi-driver-cacerts/apis/cacerts/v1alpha1
+kubeops.dev/csi-driver-cacerts/client/clientset/versioned
+kubeops.dev/csi-driver-cacerts/client/clientset/versioned/scheme
+kubeops.dev/csi-driver-cacerts/client/clientset/versioned/typed/cacerts/v1alpha1
+kubeops.dev/csi-driver-cacerts/client/informers/externalversions
+kubeops.dev/csi-driver-cacerts/client/informers/externalversions/cacerts
+kubeops.dev/csi-driver-cacerts/client/informers/externalversions/cacerts/v1alpha1
+kubeops.dev/csi-driver-cacerts/client/informers/externalversions/internalinterfaces
+kubeops.dev/csi-driver-cacerts/client/listers/cacerts/v1alpha1
 # sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.15
 ## explicit; go 1.13
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client/pkg/client

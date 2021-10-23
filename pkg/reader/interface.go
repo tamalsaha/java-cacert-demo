@@ -14,35 +14,34 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package reader
+package configreader
 
 import (
 	"time"
 
-	cmcs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	informers "github.com/jetstack/cert-manager/pkg/client/informers/externalversions"
-	listers "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
+	informers "kubeops.dev/csi-driver-cacerts/client/informers/externalversions"
+	cs "kubeops.dev/csi-driver-cacerts/client/clientset/versioned"
+	listers "kubeops.dev/csi-driver-cacerts/client/listers/cacerts/v1alpha1"
 )
 
 type Reader interface {
-	ClusterIssuers() listers.ClusterIssuerLister
-	Issuers(namespace string) listers.IssuerNamespaceLister
+	CAProviderClasses(namespace string) listers.CAProviderClassNamespaceLister
 }
 
-func New(dc cmcs.Interface) Reader {
+func New(dc cs.Interface) Reader {
 	return &directImpl{
 		dc: dc,
 	}
 }
 
-func NewCached(dc cmcs.Interface, defaultResync time.Duration, stopCh <-chan struct{}) Reader {
+func NewCached(dc cs.Interface, defaultResync time.Duration, stopCh <-chan struct{}) Reader {
 	return &cachedImpl{
 		factory: informers.NewSharedInformerFactory(dc, defaultResync),
 		stopCh:  stopCh,
 	}
 }
 
-func NewCachedWithOptions(dc cmcs.Interface, defaultResync time.Duration, stopCh <-chan struct{}, options ...informers.SharedInformerOption) Reader {
+func NewCachedWithOptions(dc cs.Interface, defaultResync time.Duration, stopCh <-chan struct{}, options ...informers.SharedInformerOption) Reader {
 	return &cachedImpl{
 		factory: informers.NewSharedInformerFactoryWithOptions(dc, defaultResync, options...),
 		stopCh:  stopCh,
