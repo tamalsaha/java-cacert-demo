@@ -40,7 +40,7 @@ import (
 
 	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	cmmeta "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
-	vaultfake "github.com/jetstack/cert-manager/pkg/internal/vault/fake"
+	vaultfake "github.com/tamalsaha/java-cacert-demo/pkg/internal/vault/fake"
 	"github.com/jetstack/cert-manager/pkg/util/pki"
 	"github.com/jetstack/cert-manager/test/unit/gen"
 	"github.com/jetstack/cert-manager/test/unit/listers"
