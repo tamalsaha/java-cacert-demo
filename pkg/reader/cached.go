@@ -21,8 +21,8 @@ import (
 	"reflect"
 	"sync"
 
-	informers "kubeops.dev/csi-driver-cacerts/client/informers/externalversions"
 	api "kubeops.dev/csi-driver-cacerts/apis/cacerts/v1alpha1"
+	informers "kubeops.dev/csi-driver-cacerts/client/informers/externalversions"
 	listers "kubeops.dev/csi-driver-cacerts/client/listers/cacerts/v1alpha1"
 )
 
@@ -37,9 +37,16 @@ type cachedImpl struct {
 var _ Reader = &cachedImpl{}
 
 func (i *cachedImpl) CAProviderClasses(namespace string) listers.CAProviderClassNamespaceLister {
-	getLister := func() listers.CAProviderClassLister {
-		i.lock.RLock()
-		defer i.lock.RUnlock()
+	i.lock.RLock()
+	if i.caProviderClassLister != nil {
+		i.lock.RUnlock()
+		return i.caProviderClassLister.CAProviderClasses(namespace)
+	}
+	i.lock.RUnlock()
+
+	createLister := func() listers.CAProviderClassLister {
+		i.lock.Lock()
+		defer i.lock.Unlock()
 		if i.caProviderClassLister != nil {
 			return i.caProviderClassLister
 		}
@@ -53,5 +60,5 @@ func (i *cachedImpl) CAProviderClasses(namespace string) listers.CAProviderClass
 		i.caProviderClassLister = listers.NewCAProviderClassLister(informerDep.Informer().GetIndexer())
 		return i.caProviderClassLister
 	}
-	return getLister().CAProviderClasses(namespace)
+	return createLister().CAProviderClasses(namespace)
 }

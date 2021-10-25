@@ -19,8 +19,8 @@ package configreader
 import (
 	"time"
 
-	informers "kubeops.dev/csi-driver-cacerts/client/informers/externalversions"
 	cs "kubeops.dev/csi-driver-cacerts/client/clientset/versioned"
+	informers "kubeops.dev/csi-driver-cacerts/client/informers/externalversions"
 	listers "kubeops.dev/csi-driver-cacerts/client/listers/cacerts/v1alpha1"
 )
 
