@@ -101,7 +101,7 @@ func (v *Vault) Setup(ctx context.Context) error {
 		return nil
 	}
 
-	client, err := vaultinternal.New(v.resourceNamespace, v.secretsLister, v.issuer)
+	client, err := vaultinternal.New(v.resourceNamespace, v.secretsReader, v.issuer)
 	if err != nil {
 		s := messageVaultClientInitFailed + err.Error()
 		logf.V(logf.WarnLevel).Infof("%s: %s", v.issuer.GetObjectMeta().Name, s)

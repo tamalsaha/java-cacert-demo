@@ -29,7 +29,7 @@ type Vault struct {
 	*controller.Context
 	issuer v1.GenericIssuer
 
-	secretsLister configreader.ConfigReader
+	secretsReader configreader.ConfigReader
 
 	// Namespace in which to read resources related to this Issuer from.
 	// For Issuers, this will be the namespace of the Issuer.
@@ -41,7 +41,7 @@ func NewVault(ctx *controller.Context, issuer v1.GenericIssuer) (issuer.Interfac
 	return &Vault{
 		Context:           ctx,
 		issuer:            issuer,
-		secretsLister:     configreader.New(ctx.Client),
+		secretsReader:     configreader.New(ctx.Client),
 		resourceNamespace: ctx.IssuerOptions.ResourceNamespace(issuer),
 	}, nil
 }

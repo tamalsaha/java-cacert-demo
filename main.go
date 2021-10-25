@@ -13,7 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	cmv1_api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	cmv1_cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1"
 	keystore "github.com/pavel-v-chernykh/keystore-go/v4"
@@ -109,9 +109,17 @@ var caCahce = map[ObjectKey][]*x509.Certificate{}
 var caGetterFactory = map[schema.GroupKind]CAGetter{}
 
 func main() {
-	var p cacerts_api.CAProviderClass
-	fmt.Println(p)
+	var pc cacerts_api.CAProviderClass
+	fmt.Println(pc)
+
+	var c client.Client
+	for _, ref := range pc.Spec.Refs {
+		fmt.Println(ref)
+	}
 }
+
+
+
 
 func main22() {
 	caCerts, certs, err := cert.ParseRootCAs([]byte(selfsigned_ca_crt))
