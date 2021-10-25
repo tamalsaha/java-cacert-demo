@@ -8,13 +8,13 @@ require (
 	github.com/jetstack/cert-manager v1.4.4
 	github.com/pavel-v-chernykh/keystore-go/v4 v4.1.0
 	gomodules.xyz/cert v1.4.1
-	k8s.io/api v0.22.2
-	k8s.io/apimachinery v0.22.2
+	k8s.io/api v0.22.0
+	k8s.io/apimachinery v0.21.4
 	k8s.io/client-go v0.22.0
 	kmodules.xyz/cert-manager-util v0.0.0-20211023101034-1ec2c54398b0
 	kmodules.xyz/client-go v0.0.0-20211023080224-88313b8deed7
 	kubeops.dev/csi-driver-cacerts v0.0.0-20211020013806-a560fe08a5b9
-	sigs.k8s.io/controller-runtime v0.9.7
+	sigs.k8s.io/controller-runtime v0.9.0
 )
 
 require (
