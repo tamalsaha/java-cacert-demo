@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"context"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/tamalsaha/java-cacert-demo/pkg/getters"
 	"io"
-	"k8s.io/klog/v2"
 	"log"
 	"os"
 	"path/filepath"
@@ -16,6 +15,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/tamalsaha/java-cacert-demo/pkg/getters"
 
 	cmv1_api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	cmv1_cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1"
@@ -136,8 +137,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%+v\n", pc)
-	klog.Fatalln()
+
+	data, err := json.MarshalIndent(pc, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(data))
 
 	certs := map[uint64]*x509.Certificate{}
 	// https://stackoverflow.com/a/9104143
