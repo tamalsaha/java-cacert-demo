@@ -17,7 +17,7 @@ type CAGetterIssuer struct {
 
 var _ lib.CAGetter = &CAGetterIssuer{}
 
-func (c *CAGetterIssuer) GetCAs(obj client.Object, key string) ([]*x509.Certificate, error) {
+func (c *CAGetterIssuer) GetCAs(obj client.Object, _ string) ([]*x509.Certificate, error) {
 	issuer, ok := obj.(cmapi.GenericIssuer)
 	if !ok {
 		return nil, fmt.Errorf("%v %s/%s is not a GenericIssuer", obj.GetObjectKind().GroupVersionKind(), obj.GetNamespace(), obj.GetName())
@@ -35,6 +35,7 @@ func (c *CAGetterIssuer) GetCAs(obj client.Object, key string) ([]*x509.Certific
 	if err != nil {
 		return nil, err
 	}
+	key := corev1.TLSCertKey
 	data, ok := secret.Data[key]
 	if !ok {
 		return nil, fmt.Errorf("missing key %s in secret %s", key, secretRef)

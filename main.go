@@ -197,7 +197,7 @@ func main() {
 		err := ks.SetTrustedCertificateEntry(fmt.Sprintf("%d", caId), keystore.TrustedCertificateEntry{
 			CreationTime: ca.NotBefore,
 			Certificate: keystore.Certificate{
-				Type:    "",
+				Type:    "X.509",
 				Content: ca.Raw,
 			},
 		})

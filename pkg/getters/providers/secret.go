@@ -19,6 +19,13 @@ func (c *CAGetterSecret) GetCAs(obj client.Object, key string) ([]*x509.Certific
 	if !ok {
 		return nil, fmt.Errorf("%v %s/%s is not a Secret", obj.GetObjectKind().GroupVersionKind(), obj.GetNamespace(), obj.GetName())
 	}
+	if key == "" {
+		if secret.Type == corev1.SecretTypeServiceAccountToken {
+			key = corev1.ServiceAccountRootCAKey
+		} else {
+			key = corev1.TLSCertKey
+		}
+	}
 	data, ok := secret.Data[key]
 	if !ok {
 		return nil, fmt.Errorf("missing key %s in secret %s/%s", key, obj.GetNamespace(), obj.GetName())
