@@ -109,9 +109,9 @@ func (v *Vault) CA() (ca []byte, err error) {
 
 	var p string
 	// https://www.vaultproject.io/api/secret/pki#sign-certificate
-	if idx :=strings.LastIndex(vaultIssuer.Path, "/sign/"); idx != -1 {
+	if idx := strings.LastIndex(vaultIssuer.Path, "/sign/"); idx != -1 {
 		p = vaultIssuer.Path[:idx] + "/ca/pem"
-	} else if idx :=strings.LastIndex(vaultIssuer.Path, "/sign-verbatim"); idx != -1 {
+	} else if idx := strings.LastIndex(vaultIssuer.Path, "/sign-verbatim"); idx != -1 {
 		p = vaultIssuer.Path[:idx] + "/ca/pem"
 	}
 	if p == "" {
@@ -125,7 +125,7 @@ func (v *Vault) CA() (ca []byte, err error) {
 
 	resp, err := v.client.RawRequest(request)
 	if err != nil {
-		return  nil, fmt.Errorf("failed to sign certificate by vault: %s", err)
+		return nil, fmt.Errorf("failed to sign certificate by vault: %s", err)
 	}
 	defer resp.Body.Close()
 

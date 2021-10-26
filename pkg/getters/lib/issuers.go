@@ -3,35 +3,24 @@ package lib
 import (
 	"fmt"
 	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	"github.com/tamalsaha/java-cacert-demo/pkg/getters/providers"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	// IssuerACME is the name of the ACME issuer
-	IssuerACME string = "acme"
-	// IssuerCA is the name of the simple issuer
-	IssuerCA string = "ca"
-	// IssuerVault is the name of the Vault issuer
-	IssuerVault string = "vault"
-	// IssuerSelfSigned is a self signing issuer
-	IssuerSelfSigned string = "selfsigned"
-	// IssuerVenafi uses Venafi Trust Protection Platform and Venafi Cloud
-	IssuerVenafi string = "venafi"
-)
-
-// NameForIssuer determines the name of the Issuer implementation given an
-// Issuer resource.
-func NameForIssuer(i cmapi.GenericIssuer) (string, error) {
-	switch {
-	case i.GetSpec().ACME != nil:
-		return IssuerACME, nil
-	case i.GetSpec().CA != nil:
-		return IssuerCA, nil
-	case i.GetSpec().Vault != nil:
-		return IssuerVault, nil
-	case i.GetSpec().SelfSigned != nil:
-		return IssuerSelfSigned, nil
-	case i.GetSpec().Venafi != nil:
-		return IssuerVenafi, nil
+func NewCAGetter(c client.Client, ref ObjectRef, obj client.Object) (CAGetter, error) {
+	switch ref.GVK() {
+	case corev1.SchemeGroupVersion.WithKind("Secret"):
+		return new(providers.CAGetterSecret), nil
+	case cmapi.SchemeGroupVersion.WithKind("Issuer"),
+		cmapi.SchemeGroupVersion.WithKind("ClusterIssuer"):
+		issuer, ok := obj.(cmapi.GenericIssuer)
+		if !ok {
+			return nil, fmt.Errorf("unknow obj ref %+v", ref)
+		}
+		if issuer.GetSpec().CA != nil {
+			return &providers.CAGetterIssuer{Reader: c}, nil
+		}
 	}
-	return "", fmt.Errorf("no issuer specified for Issuer '%s/%s'", i.GetObjectMeta().Namespace, i.GetObjectMeta().Name)
+	return nil, fmt.Errorf("unknow obj ref %+v", ref)
 }

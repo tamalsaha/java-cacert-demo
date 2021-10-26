@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -10,19 +9,23 @@ import (
 	cmv1_cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1"
 	keystore "github.com/pavel-v-chernykh/keystore-go/v4"
 	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
+	"github.com/zeebo/xxh3"
 	"gomodules.xyz/cert"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	"k8s.io/klog/v2/klogr"
 	cacerts_api "kubeops.dev/csi-driver-cacerts/apis/cacerts/v1alpha1"
 	"log"
 	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"strconv"
 	"strings"
 )
@@ -90,24 +93,60 @@ HTUsNM2cNy69KwgxR0KA4H6mFEoPWlk8ojFTSxCIieWzsv95Pdm6
 var caCahce = map[lib.ObjectRef][]*x509.Certificate{}
 var caGetterFactory = map[schema.GroupKind]lib.CAGetter{}
 
+var (
+	scheme   = clientgoscheme.Scheme
+	setupLog = ctrl.Log.WithName("setup")
+)
+
 func main() {
 	var pc cacerts_api.CAProviderClass
 	fmt.Println(pc)
 
-	certs := map[string]*x509.Certificate{}
+	_ = cmv1_api.AddToScheme(scheme)
+	_ = cacerts_api.AddToScheme(scheme)
 
-	var c client.Client
+	ctrl.SetLogger(klogr.New())
+	cfg := ctrl.GetConfigOrDie()
+
+	mapper, err := apiutil.NewDynamicRESTMapper(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	c, err := client.New(cfg, client.Options{
+		Scheme: scheme,
+		Mapper: mapper,
+		Opts: client.WarningHandlerOptions{
+			SuppressWarnings:   false,
+			AllowDuplicateLogs: false,
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	certs := map[uint64]*x509.Certificate{}
+	// https://stackoverflow.com/a/9104143
 	for _, typedRef := range pc.Spec.Refs {
 		ref := lib.RefFrom(pc, typedRef)
 		obj, err := lib.GetObj(c, ref)
 		if err != nil {
 			panic(err)
 		}
-		if gi, ok := obj.(cmv1_api.GenericIssuer); ok {
 
+		getter, err := lib.NewCAGetter(c, ref, obj)
+		if err != nil {
+			panic(err)
 		}
-
+		cas, err := getter.GetCAs(obj, ref.Key)
+		if err != nil {
+			panic(err)
+		}
+		for _, ca := range cas {
+			certs[xxh3.Hash(ca.Raw)] = ca
+		}
 	}
+
 
 }
 

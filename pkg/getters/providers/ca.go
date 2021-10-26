@@ -12,7 +12,7 @@ import (
 )
 
 type CAGetterIssuer struct {
-	reader client.Reader
+	Reader client.Reader
 }
 
 var _ lib.CAGetter = &CAGetterIssuer{}
@@ -31,7 +31,7 @@ func (c *CAGetterIssuer) GetCAs(obj client.Object, key string) ([]*x509.Certific
 		Namespace: issuer.GetNamespace(),
 		Name:      issuer.GetSpec().CA.SecretName,
 	}
-	err := c.reader.Get(context.TODO(), secretRef, &secret)
+	err := c.Reader.Get(context.TODO(), secretRef, &secret)
 	if err != nil {
 		return nil, err
 	}
