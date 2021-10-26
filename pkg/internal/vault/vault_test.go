@@ -36,14 +36,14 @@ import (
 	vault "github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/sdk/helper/certutil"
 	"github.com/hashicorp/vault/sdk/helper/jsonutil"
-	corev1 "k8s.io/api/core/v1"
-
 	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	cmmeta "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	"github.com/jetstack/cert-manager/pkg/util/pki"
 	"github.com/jetstack/cert-manager/test/unit/gen"
-	"github.com/jetstack/cert-manager/test/unit/listers"
 	vaultfake "github.com/tamalsaha/java-cacert-demo/pkg/internal/vault/fake"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -177,7 +177,7 @@ func generateCSR(t *testing.T, secretKey crypto.Signer) []byte {
 
 type testSignT struct {
 	issuer     *cmapi.Issuer
-	fakeLister *listers.FakeSecretLister
+	fakeLister client.Client
 	fakeClient *vaultfake.Client
 
 	csrPEM       []byte
@@ -376,7 +376,7 @@ type testSetTokenT struct {
 	expectedErr   error
 
 	issuer     *cmapi.Issuer
-	fakeLister *listers.FakeSecretLister
+	fakeLister client.Client
 	fakeClient *vaultfake.Client
 }
 
@@ -406,7 +406,7 @@ func TestSetToken(t *testing.T) {
 					Auth:     cmapi.VaultAuth{},
 				}),
 			),
-			fakeLister:    listers.FakeSecretListerFrom(listers.NewFakeSecretLister()),
+			fakeLister:    fake.NewClientBuilder().Build(),
 			fakeClient:    vaultfake.NewFakeClient(),
 			expectedToken: "",
 			expectedErr: errors.New(
@@ -427,9 +427,7 @@ func TestSetToken(t *testing.T) {
 					},
 				}),
 			),
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(nil, errors.New("secret does not exists")),
-			),
+			fakeLister:    fake.NewClientBuilder().Build(),
 			fakeClient:    vaultfake.NewFakeClient(),
 			expectedToken: "",
 			expectedErr:   errors.New("secret does not exists"),
@@ -449,9 +447,7 @@ func TestSetToken(t *testing.T) {
 					},
 				}),
 			),
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(tokenSecret, nil),
-			),
+			fakeLister:    fake.NewClientBuilder().WithObjects(tokenSecret).Build(),
 			fakeClient:    vaultfake.NewFakeClient(),
 			expectedToken: "my-secret-token",
 			expectedErr:   nil,
@@ -474,9 +470,7 @@ func TestSetToken(t *testing.T) {
 					},
 				}),
 			),
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(nil, errors.New("secret not found")),
-			),
+			fakeLister:    fake.NewClientBuilder().Build(),
 			fakeClient:    vaultfake.NewFakeClient(),
 			expectedToken: "",
 			expectedErr:   errors.New("secret not found"),
@@ -499,9 +493,7 @@ func TestSetToken(t *testing.T) {
 					},
 				}),
 			),
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(appRoleSecret, nil),
-			),
+			fakeLister: fake.NewClientBuilder().WithObjects(appRoleSecret).Build(),
 			fakeClient: vaultfake.NewFakeClient().WithRawRequest(&vault.Response{
 				Response: &http.Response{
 					Body: io.NopCloser(
@@ -531,9 +523,7 @@ func TestSetToken(t *testing.T) {
 					},
 				}),
 			),
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(nil, errors.New("secret does not exists")),
-			),
+			fakeLister:    fake.NewClientBuilder().Build(),
 			fakeClient:    vaultfake.NewFakeClient(),
 			expectedToken: "",
 			expectedErr:   errors.New("error reading Kubernetes service account token from secret-ref-name: secret does not exists"),
@@ -556,9 +546,7 @@ func TestSetToken(t *testing.T) {
 					},
 				}),
 			),
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(&corev1.Secret{}, nil),
-			),
+			fakeLister:    fake.NewClientBuilder().WithObjects(&corev1.Secret{}).Build(),
 			fakeClient:    vaultfake.NewFakeClient(),
 			expectedToken: "",
 			expectedErr:   errors.New(`error reading Kubernetes service account token from secret-ref-name: no data for "my-kube-key" in secret 'test-namespace/secret-ref-name'`),
@@ -581,9 +569,7 @@ func TestSetToken(t *testing.T) {
 					},
 				}),
 			),
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(kubeAuthSecret, nil),
-			),
+			fakeLister:    fake.NewClientBuilder().WithObjects(kubeAuthSecret).Build(),
 			fakeClient:    vaultfake.NewFakeClient().WithRawRequest(nil, errors.New("raw request error")),
 			expectedToken: "",
 			expectedErr:   errors.New("error reading Kubernetes service account token from secret-ref-name: error calling Vault server: raw request error"),
@@ -606,9 +592,7 @@ func TestSetToken(t *testing.T) {
 					},
 				}),
 			),
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(kubeAuthSecret, nil),
-			),
+			fakeLister: fake.NewClientBuilder().WithObjects(kubeAuthSecret).Build(),
 			fakeClient: vaultfake.NewFakeClient().WithRawRequest(&vault.Response{
 				Response: &http.Response{
 					Body: io.NopCloser(
@@ -644,9 +628,7 @@ func TestSetToken(t *testing.T) {
 					},
 				}),
 			),
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(tokenSecret, nil),
-			),
+			fakeLister:    fake.NewClientBuilder().WithObjects(tokenSecret).Build(),
 			fakeClient:    vaultfake.NewFakeClient(),
 			expectedToken: "my-secret-token",
 			expectedErr:   nil,
@@ -684,7 +666,7 @@ type testAppRoleRefT struct {
 
 	appRole *cmapi.VaultAppRole
 
-	fakeLister *listers.FakeSecretLister
+	fakeLister client.Client
 }
 
 func TestAppRoleRef(t *testing.T) {
@@ -697,9 +679,10 @@ func TestAppRoleRef(t *testing.T) {
 	tests := map[string]testAppRoleRefT{
 		"failing to get secret should error": {
 			appRole: basicAppRoleRef,
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(nil, errSecretGet),
-			),
+			//fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
+			//	listers.SetFakeSecretNamespaceListerGet(nil, errSecretGet),
+			//),
+			fakeLister:       fake.NewClientBuilder().Build(),
 			expectedRoleID:   "",
 			expectedSecretID: "",
 			expectedErr:      errSecretGet,
@@ -715,14 +698,11 @@ func TestAppRoleRef(t *testing.T) {
 					Key: "my-key",
 				},
 			},
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(
-					&corev1.Secret{
-						Data: map[string][]byte{
-							"foo": []byte("bar"),
-						},
-					}, nil),
-			),
+			fakeLister: fake.NewClientBuilder().WithObjects(&corev1.Secret{
+				Data: map[string][]byte{
+					"foo": []byte("bar"),
+				},
+			}).Build(),
 			expectedRoleID:   "",
 			expectedSecretID: "",
 			expectedErr:      errors.New(`no data for "my-key" in secret 'test-namespace/secret-name'`),
@@ -738,15 +718,12 @@ func TestAppRoleRef(t *testing.T) {
 					Key: "my-key",
 				},
 			},
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(
-					&corev1.Secret{
-						Data: map[string][]byte{
-							"foo":    []byte("bar"),
-							"my-key": []byte("    my-key-data   "),
-						},
-					}, nil),
-			),
+			fakeLister: fake.NewClientBuilder().WithObjects(&corev1.Secret{
+				Data: map[string][]byte{
+					"foo":    []byte("bar"),
+					"my-key": []byte("    my-key-data   "),
+				},
+			}).Build(),
 			expectedRoleID:   "my-role-id",
 			expectedSecretID: "my-key-data",
 			expectedErr:      nil,
@@ -788,7 +765,7 @@ type testTokenRefT struct {
 
 	key string
 
-	fakeLister *listers.FakeSecretLister
+	fakeLister client.Client
 }
 
 func TestTokenRef(t *testing.T) {
@@ -798,23 +775,21 @@ func TestTokenRef(t *testing.T) {
 
 	tests := map[string]testTokenRefT{
 		"failing to get secret should error": {
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(nil, errSecretGet),
-			),
+			//fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
+			//	listers.SetFakeSecretNamespaceListerGet(nil, errSecretGet),
+			//),
+			fakeLister:    fake.NewClientBuilder().Build(),
 			key:           "a-key",
 			expectedToken: "",
 			expectedErr:   errSecretGet,
 		},
 
 		"if no vault at key exists then error": {
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(
-					&corev1.Secret{
-						Data: map[string][]byte{
-							"foo": []byte("bar"),
-						},
-					}, nil),
-			),
+			fakeLister: fake.NewClientBuilder().WithObjects(&corev1.Secret{
+				Data: map[string][]byte{
+					"foo": []byte("bar"),
+				},
+			}).Build(),
 
 			key:           "a-key",
 			expectedToken: "",
@@ -822,29 +797,23 @@ func TestTokenRef(t *testing.T) {
 				testName, testNamespace),
 		},
 		"if value exists at key then return with whitespace trimmed": {
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(
-					&corev1.Secret{
-						Data: map[string][]byte{
-							"foo":   []byte("bar"),
-							"a-key": []byte(" my-token              "),
-						},
-					}, nil),
-			),
+			fakeLister: fake.NewClientBuilder().WithObjects(&corev1.Secret{
+				Data: map[string][]byte{
+					"foo":   []byte("bar"),
+					"a-key": []byte(" my-token              "),
+				},
+			}).Build(),
 
 			key:           "a-key",
 			expectedToken: "my-token",
 		},
 		"if no key is given then it should default to 'token'": {
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(
-					&corev1.Secret{
-						Data: map[string][]byte{
-							"foo":   []byte("bar"),
-							"token": []byte(" my-token              "),
-						},
-					}, nil),
-			),
+			fakeLister: fake.NewClientBuilder().WithObjects(&corev1.Secret{
+				Data: map[string][]byte{
+					"foo":   []byte("bar"),
+					"token": []byte(" my-token              "),
+				},
+			}).Build(),
 
 			key:           "",
 			expectedToken: "my-token",
@@ -958,7 +927,7 @@ type requestTokenWithAppRoleRefT struct {
 	client  Client
 	appRole *cmapi.VaultAppRole
 
-	fakeLister *listers.FakeSecretLister
+	fakeLister client.Client
 
 	expectedToken string
 	expectedErr   error
@@ -975,22 +944,17 @@ func TestRequestTokenWithAppRoleRef(t *testing.T) {
 		},
 	}
 
-	basicSecretLister := listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-		listers.SetFakeSecretNamespaceListerGet(
-			&corev1.Secret{
-				Data: map[string][]byte{
-					"my-key": []byte("my-key-data"),
-				},
-			}, nil),
-	)
+	basicSecretLister := fake.NewClientBuilder().WithObjects(&corev1.Secret{
+		Data: map[string][]byte{
+			"my-key": []byte("my-key-data"),
+		},
+	}).Build()
 
 	tests := map[string]requestTokenWithAppRoleRefT{
 		"a secret reference that does not exist should error": {
-			client:  vaultfake.NewFakeClient(),
-			appRole: basicAppRoleRef,
-			fakeLister: listers.FakeSecretListerFrom(listers.NewFakeSecretLister(),
-				listers.SetFakeSecretNamespaceListerGet(nil, errors.New("secret not found")),
-			),
+			client:     vaultfake.NewFakeClient(),
+			appRole:    basicAppRoleRef,
+			fakeLister: fake.NewClientBuilder().Build(),
 
 			expectedToken: "",
 			expectedErr:   errors.New("secret not found"),
