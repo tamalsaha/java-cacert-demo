@@ -16,6 +16,13 @@ $ kubectl apply -f nginx.yaml
 
 https://172.18.0.2:30789/
 
+```
+$ cd ~/go/src/kubeops.dev/csi-driver-cacerts
+$ kubectl apply -f crds/cacerts.csi.cert-manager.io_caproviderclasses.yaml
+
+$ kubectl apply -f curl.yaml
+```
+
 # Testing cert-manager
 
 - Start off by generating you ca certificates using openssl.
