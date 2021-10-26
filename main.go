@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
+	"k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"os"
 	"path/filepath"
@@ -19,6 +20,7 @@ import (
 	"github.com/tamalsaha/java-cacert-demo/pkg/getters"
 
 	cmv1_api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	cmscheme "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/scheme"
 	cmv1_cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1"
 	keystore "github.com/pavel-v-chernykh/keystore-go/v4"
 	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
@@ -101,12 +103,13 @@ var caCahce = map[lib.ObjectRef][]*x509.Certificate{}
 var caGetterFactory = map[schema.GroupKind]lib.CAGetter{}
 
 var (
-	scheme   = clientgoscheme.Scheme
+	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 )
 
 func main() {
-	_ = cmv1_api.AddToScheme(scheme)
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = cmscheme.AddToScheme(scheme)
 	_ = cacerts_api.AddToScheme(scheme)
 
 	ctrl.SetLogger(klogr.New())
@@ -148,7 +151,7 @@ func main() {
 	// https://stackoverflow.com/a/9104143
 	for _, typedRef := range pc.Spec.Refs {
 		ref := lib.RefFrom(pc, typedRef)
-		obj, err := lib.GetObj(c, ref)
+		obj, err := lib.GetObj(c, mapper, ref)
 		if err != nil {
 			panic(err)
 		}

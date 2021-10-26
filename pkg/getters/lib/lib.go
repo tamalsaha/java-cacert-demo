@@ -3,6 +3,7 @@ package lib
 import (
 	"context"
 	"crypto/x509"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	cacerts_api "kubeops.dev/csi-driver-cacerts/apis/cacerts/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,8 +61,8 @@ func RefFrom(pc cacerts_api.CAProviderClass, ref cacerts_api.TypedObjectReferenc
 	return result
 }
 
-func (ref ObjectRef) GVK() schema.GroupVersionKind {
-	return schema.FromAPIVersionAndKind(ref.APIGroup, ref.Kind)
+func (ref ObjectRef) GroupKind() schema.GroupKind {
+	return schema.GroupKind{Group: ref.APIGroup, Kind: ref.Kind}
 }
 
 func (ref ObjectRef) ObjKey() client.ObjectKey {
@@ -71,8 +72,12 @@ func (ref ObjectRef) ObjKey() client.ObjectKey {
 	}
 }
 
-func GetObj(c client.Client, ref ObjectRef) (client.Object, error) {
-	o, err := c.Scheme().New(ref.GVK())
+func GetObj(c client.Client, mapper meta.RESTMapper, ref ObjectRef) (client.Object, error) {
+	mapping, err := mapper.RESTMapping(ref.GroupKind())
+	if err != nil {
+		return nil, err
+	}
+	o, err := c.Scheme().New(mapping.GroupVersionKind)
 	if err != nil {
 		return nil, err
 	}
