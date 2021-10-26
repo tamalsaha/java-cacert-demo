@@ -17,19 +17,14 @@ limitations under the License.
 package vault
 
 import (
-	"kmodules.xyz/client-go/tools/configreader"
-
-	apiutil "github.com/jetstack/cert-manager/pkg/api/util"
-	v1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	"github.com/jetstack/cert-manager/pkg/controller"
-	"github.com/jetstack/cert-manager/pkg/issuer"
+	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Vault struct {
-	*controller.Context
-	issuer v1.GenericIssuer
-
-	secretsReader configreader.ConfigReader
+	reader client.Reader
+	opts   IssuerOptions
 
 	// Namespace in which to read resources related to this Issuer from.
 	// For Issuers, this will be the namespace of the Issuer.
@@ -37,16 +32,37 @@ type Vault struct {
 	resourceNamespace string
 }
 
-func NewVault(ctx *controller.Context, issuer v1.GenericIssuer) (issuer.Interface, error) {
+func NewVault(c client.Reader, opts IssuerOptions) (lib.CAGetter, error) {
 	return &Vault{
-		Context:           ctx,
-		issuer:            issuer,
-		secretsReader:     configreader.New(ctx.Client),
-		resourceNamespace: ctx.IssuerOptions.ResourceNamespace(issuer),
+		reader: c,
+		opts:   opts,
 	}, nil
 }
 
-// Register this Issuer with the issuer factory
-func init() {
-	issuer.RegisterIssuer(apiutil.IssuerVault, NewVault)
+//// Register this Issuer with the issuer factory
+//func init() {
+//	issuer.RegisterIssuer(apiutil.IssuerVault, NewVault)
+//}
+
+type IssuerOptions struct {
+	// ClusterResourceNamespace is the namespace to store resources created by
+	// non-namespaced resources (e.g. ClusterIssuer) in.
+	ClusterResourceNamespace string
+
+	// ClusterIssuerAmbientCredentials controls whether a cluster issuer should
+	// pick up ambient credentials, such as those from metadata services, to
+	// construct clients.
+	ClusterIssuerAmbientCredentials bool
+
+	// IssuerAmbientCredentials controls whether an issuer should pick up ambient
+	// credentials, such as those from metadata services, to construct clients.
+	IssuerAmbientCredentials bool
+}
+
+func (o IssuerOptions) ResourceNamespace(iss cmapi.GenericIssuer) string {
+	ns := iss.GetObjectMeta().Namespace
+	if ns == "" {
+		ns = o.ClusterResourceNamespace
+	}
+	return ns
 }

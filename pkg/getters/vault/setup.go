@@ -17,14 +17,13 @@ limitations under the License.
 package vault
 
 import (
-	"context"
+	"crypto/x509"
 	"fmt"
+	"gomodules.xyz/cert"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	apiutil "github.com/jetstack/cert-manager/pkg/api/util"
-	v1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	cmmeta "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
+	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	vaultinternal "github.com/tamalsaha/java-cacert-demo/pkg/internal/vault"
-	logf "github.com/tamalsaha/java-cacert-demo/pkg/logs"
 )
 
 const (
@@ -45,77 +44,73 @@ const (
 	messageAppRoleAuthFieldsRequired = "Vault AppRole auth requires both roleId and tokenSecretRef.name"
 )
 
-func (v *Vault) Setup(ctx context.Context) error {
-	if v.issuer.GetSpec().Vault == nil {
-		logf.V(logf.WarnLevel).Infof("%s: %s", v.issuer.GetObjectMeta().Name, messageVaultConfigRequired)
-		apiutil.SetIssuerCondition(v.issuer, v.issuer.GetGeneration(), v1.IssuerConditionReady, cmmeta.ConditionFalse, errorVault, messageVaultConfigRequired)
-		return nil
+func (v *Vault) GetCAs(obj client.Object, _ string) ([]*x509.Certificate, error) {
+	issuer, ok := obj.(cmapi.GenericIssuer)
+	if !ok {
+		return nil, fmt.Errorf("%v %s/%s is not a GenericIssuer", obj.GetObjectKind().GroupVersionKind(), obj.GetNamespace(), obj.GetName())
+	}
+
+	if issuer.GetSpec().Vault == nil {
+		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageVaultConfigRequired)
 	}
 
 	// check if Vault server info is specified.
-	if v.issuer.GetSpec().Vault.Server == "" ||
-		v.issuer.GetSpec().Vault.Path == "" {
-		logf.V(logf.WarnLevel).Infof("%s: %s", v.issuer.GetObjectMeta().Name, messageServerAndPathRequired)
-		apiutil.SetIssuerCondition(v.issuer, v.issuer.GetGeneration(), v1.IssuerConditionReady, cmmeta.ConditionFalse, errorVault, messageServerAndPathRequired)
-		return nil
+	if issuer.GetSpec().Vault.Server == "" ||
+		issuer.GetSpec().Vault.Path == "" {
+		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageServerAndPathRequired)
 	}
 
-	tokenAuth := v.issuer.GetSpec().Vault.Auth.TokenSecretRef
-	appRoleAuth := v.issuer.GetSpec().Vault.Auth.AppRole
-	kubeAuth := v.issuer.GetSpec().Vault.Auth.Kubernetes
+	tokenAuth := issuer.GetSpec().Vault.Auth.TokenSecretRef
+	appRoleAuth := issuer.GetSpec().Vault.Auth.AppRole
+	kubeAuth := issuer.GetSpec().Vault.Auth.Kubernetes
 
 	// check if at least one auth method is specified.
 	if tokenAuth == nil && appRoleAuth == nil && kubeAuth == nil {
-		logf.V(logf.WarnLevel).Infof("%s: %s", v.issuer.GetObjectMeta().Name, messageAuthFieldsRequired)
-		apiutil.SetIssuerCondition(v.issuer, v.issuer.GetGeneration(), v1.IssuerConditionReady, cmmeta.ConditionFalse, errorVault, messageAuthFieldsRequired)
-		return nil
+		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageAuthFieldsRequired)
 	}
 
 	// check only one auth method set
 	if (tokenAuth != nil && appRoleAuth != nil) ||
 		(tokenAuth != nil && kubeAuth != nil) ||
 		(appRoleAuth != nil && kubeAuth != nil) {
-		logf.V(logf.WarnLevel).Infof("%s: %s", v.issuer.GetObjectMeta().Name, messageMultipleAuthFieldsSet)
-		apiutil.SetIssuerCondition(v.issuer, v.issuer.GetGeneration(), v1.IssuerConditionReady, cmmeta.ConditionFalse, errorVault, messageMultipleAuthFieldsSet)
-		return nil
+		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageMultipleAuthFieldsSet)
 	}
 
 	// check if all mandatory Vault Token fields are set.
 	if tokenAuth != nil && len(tokenAuth.Name) == 0 {
-		logf.V(logf.WarnLevel).Infof("%s: %s", v.issuer.GetObjectMeta().Name, messageTokenAuthNameRequired)
-		apiutil.SetIssuerCondition(v.issuer, v.issuer.GetGeneration(), v1.IssuerConditionReady, cmmeta.ConditionFalse, errorVault, messageTokenAuthNameRequired)
-		return nil
+		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageTokenAuthNameRequired)
 	}
 
 	// check if all mandatory Vault appRole fields are set.
 	if appRoleAuth != nil && (len(appRoleAuth.RoleId) == 0 || len(appRoleAuth.SecretRef.Name) == 0) {
-		logf.V(logf.WarnLevel).Infof("%s: %s", v.issuer.GetObjectMeta().Name, messageAppRoleAuthFieldsRequired)
-		apiutil.SetIssuerCondition(v.issuer, v.issuer.GetGeneration(), v1.IssuerConditionReady, cmmeta.ConditionFalse, errorVault, messageAppRoleAuthFieldsRequired)
-		return nil
+		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageAppRoleAuthFieldsRequired)
 	}
 
 	// check if all mandatory Vault Kubernetes fields are set.
 	if kubeAuth != nil && (len(kubeAuth.SecretRef.Name) == 0 || len(kubeAuth.Role) == 0) {
-		logf.V(logf.WarnLevel).Infof("%s: %s", v.issuer.GetObjectMeta().Name, messageKubeAuthFieldsRequired)
-		apiutil.SetIssuerCondition(v.issuer, v.issuer.GetGeneration(), v1.IssuerConditionReady, cmmeta.ConditionFalse, errorVault, messageKubeAuthFieldsRequired)
-		return nil
+		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageKubeAuthFieldsRequired)
 	}
 
-	client, err := vaultinternal.New(v.resourceNamespace, v.secretsReader, v.issuer)
+	vc, err := vaultinternal.New(v.resourceNamespace, v.reader, issuer)
 	if err != nil {
 		s := messageVaultClientInitFailed + err.Error()
-		logf.V(logf.WarnLevel).Infof("%s: %s", v.issuer.GetObjectMeta().Name, s)
-		apiutil.SetIssuerCondition(v.issuer, v.issuer.GetGeneration(), v1.IssuerConditionReady, cmmeta.ConditionFalse, errorVault, s)
-		return err
+		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, s)
 	}
 
-	if err := client.IsVaultInitializedAndUnsealed(); err != nil {
-		logf.V(logf.WarnLevel).Infof("%s: %s: error: %s", v.issuer.GetObjectMeta().Name, messageVaultStatusVerificationFailed, err.Error())
-		apiutil.SetIssuerCondition(v.issuer, v.issuer.GetGeneration(), v1.IssuerConditionReady, cmmeta.ConditionFalse, errorVault, messageVaultStatusVerificationFailed)
-		return fmt.Errorf(messageVaultStatusVerificationFailed)
+	if err := vc.IsVaultInitializedAndUnsealed(); err != nil {
+		return nil, fmt.Errorf("%s: %s: error: %s", issuer.GetObjectMeta().Name, messageVaultStatusVerificationFailed, err.Error())
 	}
 
-	logf.Log.V(logf.DebugLevel).Info(messageVaultVerified)
-	apiutil.SetIssuerCondition(v.issuer, v.issuer.GetGeneration(), v1.IssuerConditionReady, cmmeta.ConditionTrue, successVaultVerified, messageVaultVerified)
-	return nil
+	caPEM, err := vc.CA()
+	if err != nil {
+		return nil, err
+	}
+	caCerts, _, err := cert.ParseRootCAs(caPEM)
+	if err != nil {
+		return nil, err
+	}
+	if len(caCerts) == 0 {
+		return nil, fmt.Errorf("%v %s/%s signing certificate is not a CA", issuer.GetObjectKind().GroupVersionKind(), issuer.GetNamespace(), issuer.GetName())
+	}
+	return caCerts, err
 }

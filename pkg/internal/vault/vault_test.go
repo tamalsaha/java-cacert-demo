@@ -292,10 +292,10 @@ func TestSign(t *testing.T) {
 
 	for name, test := range tests {
 		v := &Vault{
-			namespace:     "test-namespace",
-			secretsLister: test.fakeLister,
-			issuer:        test.issuer,
-			client:        test.fakeClient,
+			namespace: "test-namespace",
+			reader:    test.fakeLister,
+			issuer:    test.issuer,
+			client:    test.fakeClient,
 		}
 
 		cert, ca, err := v.Sign(test.csrPEM, time.Minute)
@@ -656,9 +656,9 @@ func TestSetToken(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			v := &Vault{
-				namespace:     "test-namespace",
-				secretsLister: test.fakeLister,
-				issuer:        test.issuer,
+				namespace: "test-namespace",
+				reader:    test.fakeLister,
+				issuer:    test.issuer,
 			}
 
 			err := v.setToken(test.fakeClient)
@@ -756,9 +756,9 @@ func TestAppRoleRef(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			v := &Vault{
-				namespace:     "test-namespace",
-				secretsLister: test.fakeLister,
-				issuer:        nil,
+				namespace: "test-namespace",
+				reader:    test.fakeLister,
+				issuer:    nil,
 			}
 
 			roleID, secretID, err := v.appRoleRef(test.appRole)
@@ -854,9 +854,9 @@ func TestTokenRef(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			v := &Vault{
-				namespace:     "test-namespace",
-				secretsLister: test.fakeLister,
-				issuer:        nil,
+				namespace: "test-namespace",
+				reader:    test.fakeLister,
+				issuer:    nil,
 			}
 
 			token, err := v.tokenRef("test-name", "test-namespace", test.key)
@@ -932,9 +932,9 @@ func TestNewConfig(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			v := &Vault{
-				namespace:     "test-namespace",
-				secretsLister: nil,
-				issuer:        test.issuer,
+				namespace: "test-namespace",
+				reader:    nil,
+				issuer:    test.issuer,
 			}
 
 			cfg, err := v.newConfig()
@@ -1059,8 +1059,8 @@ func TestRequestTokenWithAppRoleRef(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			v := &Vault{
-				namespace:     "test-namespace",
-				secretsLister: test.fakeLister,
+				namespace: "test-namespace",
+				reader:    test.fakeLister,
 				issuer: gen.Issuer("vault-issuer",
 					gen.SetIssuerNamespace("namespace"),
 				),

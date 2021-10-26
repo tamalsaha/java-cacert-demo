@@ -17,13 +17,17 @@ limitations under the License.
 package vault
 
 import (
+	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	corev1 "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/configreader"
 	"net/http"
 	"path"
 	"path/filepath"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
 
@@ -45,6 +49,7 @@ type ClientBuilder func(namespace string, secretsLister configreader.ConfigReade
 // Vault's certificate.
 // TODO: Sys() is duplicated here and in Client interface
 type Interface interface {
+	CA() (caPEM []byte, err error)
 	Sign(csrPEM []byte, duration time.Duration) (certPEM []byte, caPEM []byte, err error)
 	Sys() *vault.Sys
 	IsVaultInitializedAndUnsealed() error
@@ -62,9 +67,9 @@ type Client interface {
 // Vault implements Interface and holds a Vault issuer, secrets lister and a
 // Vault client.
 type Vault struct {
-	secretsLister configreader.ConfigReader
-	issuer        v1.GenericIssuer
-	namespace     string
+	reader    client.Reader
+	issuer    v1.GenericIssuer
+	namespace string
 
 	client Client
 }
@@ -73,11 +78,11 @@ type Vault struct {
 // secrets lister.
 // Returned errors may be network failures and should be considered for
 // retrying.
-func New(namespace string, secretsLister configreader.ConfigReader, issuer v1.GenericIssuer) (Interface, error) {
+func New(namespace string, secretsLister client.Reader, issuer v1.GenericIssuer) (Interface, error) {
 	v := &Vault{
-		secretsLister: secretsLister,
-		namespace:     namespace,
-		issuer:        issuer,
+		reader:    secretsLister,
+		namespace: namespace,
+		issuer:    issuer,
 	}
 
 	cfg, err := v.newConfig()
@@ -85,18 +90,46 @@ func New(namespace string, secretsLister configreader.ConfigReader, issuer v1.Ge
 		return nil, err
 	}
 
-	client, err := vault.NewClient(cfg)
+	vc, err := vault.NewClient(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing Vault client: %s", err.Error())
+		return nil, fmt.Errorf("error initializing Vault vc: %s", err.Error())
 	}
 
-	if err := v.setToken(client); err != nil {
+	if err := v.setToken(vc); err != nil {
 		return nil, err
 	}
 
-	v.client = client
+	v.client = vc
 
 	return v, nil
+}
+
+func (v *Vault) CA() (ca []byte, err error) {
+	vaultIssuer := v.issuer.GetSpec().Vault
+
+	var p string
+	// https://www.vaultproject.io/api/secret/pki#sign-certificate
+	if idx :=strings.LastIndex(vaultIssuer.Path, "/sign/"); idx != -1 {
+		p = vaultIssuer.Path[:idx] + "/ca/pem"
+	} else if idx :=strings.LastIndex(vaultIssuer.Path, "/sign-verbatim"); idx != -1 {
+		p = vaultIssuer.Path[:idx] + "/ca/pem"
+	}
+	if p == "" {
+		return nil, fmt.Errorf("failed to detect PKI path from %s", vaultIssuer.Path)
+	}
+	url := path.Join("/v1", p)
+
+	request := v.client.NewRequest("GET", url)
+
+	v.addVaultNamespaceToRequest(request)
+
+	resp, err := v.client.RawRequest(request)
+	if err != nil {
+		return  nil, fmt.Errorf("failed to sign certificate by vault: %s", err)
+	}
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
 }
 
 // Sign will connect to a Vault instance to sign a certificate signing request.
@@ -144,40 +177,40 @@ func (v *Vault) Sign(csrPEM []byte, duration time.Duration) (cert []byte, ca []b
 	return extractCertificatesFromVaultCertificateSecret(&vaultResult)
 }
 
-func (v *Vault) setToken(client Client) error {
+func (v *Vault) setToken(vc Client) error {
 	tokenRef := v.issuer.GetSpec().Vault.Auth.TokenSecretRef
 	if tokenRef != nil {
 		token, err := v.tokenRef(tokenRef.Name, v.namespace, tokenRef.Key)
 		if err != nil {
 			return err
 		}
-		client.SetToken(token)
+		vc.SetToken(token)
 
 		return nil
 	}
 
 	appRole := v.issuer.GetSpec().Vault.Auth.AppRole
 	if appRole != nil {
-		token, err := v.requestTokenWithAppRoleRef(client, appRole)
+		token, err := v.requestTokenWithAppRoleRef(vc, appRole)
 		if err != nil {
 			return err
 		}
-		client.SetToken(token)
+		vc.SetToken(token)
 
 		return nil
 	}
 
 	kubernetesAuth := v.issuer.GetSpec().Vault.Auth.Kubernetes
 	if kubernetesAuth != nil {
-		token, err := v.requestTokenWithKubernetesAuth(client, kubernetesAuth)
+		token, err := v.requestTokenWithKubernetesAuth(vc, kubernetesAuth)
 		if err != nil {
 			return fmt.Errorf("error reading Kubernetes service account token from %s: %s", kubernetesAuth.SecretRef.Name, err.Error())
 		}
-		client.SetToken(token)
+		vc.SetToken(token)
 		return nil
 	}
 
-	return fmt.Errorf("error initializing Vault client: tokenSecretRef, appRoleSecretRef, or Kubernetes auth role not set")
+	return fmt.Errorf("error initializing Vault vc: tokenSecretRef, appRoleSecretRef, or Kubernetes auth role not set")
 }
 
 func (v *Vault) newConfig() (*vault.Config, error) {
@@ -201,7 +234,8 @@ func (v *Vault) newConfig() (*vault.Config, error) {
 }
 
 func (v *Vault) tokenRef(name, namespace, key string) (string, error) {
-	secret, err := v.secretsLister.Secrets(namespace).Get(name)
+	var secret corev1.Secret
+	err := v.reader.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: name}, &secret)
 	if err != nil {
 		return "", err
 	}
@@ -224,7 +258,8 @@ func (v *Vault) tokenRef(name, namespace, key string) (string, error) {
 func (v *Vault) appRoleRef(appRole *v1.VaultAppRole) (roleId, secretId string, err error) {
 	roleId = strings.TrimSpace(appRole.RoleId)
 
-	secret, err := v.secretsLister.Secrets(v.namespace).Get(appRole.SecretRef.Name)
+	var secret corev1.Secret
+	err = v.reader.Get(context.TODO(), client.ObjectKey{Namespace: v.namespace, Name: appRole.SecretRef.Name}, &secret)
 	if err != nil {
 		return "", "", err
 	}
@@ -242,7 +277,7 @@ func (v *Vault) appRoleRef(appRole *v1.VaultAppRole) (roleId, secretId string, e
 	return roleId, secretId, nil
 }
 
-func (v *Vault) requestTokenWithAppRoleRef(client Client, appRole *v1.VaultAppRole) (string, error) {
+func (v *Vault) requestTokenWithAppRoleRef(vc Client, appRole *v1.VaultAppRole) (string, error) {
 	roleId, secretId, err := v.appRoleRef(appRole)
 	if err != nil {
 		return "", err
@@ -260,7 +295,7 @@ func (v *Vault) requestTokenWithAppRoleRef(client Client, appRole *v1.VaultAppRo
 
 	url := path.Join("/v1", "auth", authPath, "login")
 
-	request := client.NewRequest("POST", url)
+	request := vc.NewRequest("POST", url)
 
 	err = request.SetJSONBody(parameters)
 	if err != nil {
@@ -269,7 +304,7 @@ func (v *Vault) requestTokenWithAppRoleRef(client Client, appRole *v1.VaultAppRo
 
 	v.addVaultNamespaceToRequest(request)
 
-	resp, err := client.RawRequest(request)
+	resp, err := vc.RawRequest(request)
 	if err != nil {
 		return "", fmt.Errorf("error logging in to Vault server: %s", err.Error())
 	}
@@ -293,8 +328,9 @@ func (v *Vault) requestTokenWithAppRoleRef(client Client, appRole *v1.VaultAppRo
 	return token, nil
 }
 
-func (v *Vault) requestTokenWithKubernetesAuth(client Client, kubernetesAuth *v1.VaultKubernetesAuth) (string, error) {
-	secret, err := v.secretsLister.Secrets(v.namespace).Get(kubernetesAuth.SecretRef.Name)
+func (v *Vault) requestTokenWithKubernetesAuth(vc Client, kubernetesAuth *v1.VaultKubernetesAuth) (string, error) {
+	var secret corev1.Secret
+	err := v.reader.Get(context.TODO(), client.ObjectKey{Namespace: v.namespace, Name: kubernetesAuth.SecretRef.Name}, &secret)
 	if err != nil {
 		return "", err
 	}
@@ -322,7 +358,7 @@ func (v *Vault) requestTokenWithKubernetesAuth(client Client, kubernetesAuth *v1
 	}
 
 	url := filepath.Join(mountPath, "login")
-	request := client.NewRequest("POST", url)
+	request := vc.NewRequest("POST", url)
 	err = request.SetJSONBody(parameters)
 	if err != nil {
 		return "", fmt.Errorf("error encoding Vault parameters: %s", err.Error())
@@ -330,7 +366,7 @@ func (v *Vault) requestTokenWithKubernetesAuth(client Client, kubernetesAuth *v1
 
 	v.addVaultNamespaceToRequest(request)
 
-	resp, err := client.RawRequest(request)
+	resp, err := vc.RawRequest(request)
 	if err != nil {
 		return "", fmt.Errorf("error calling Vault server: %s", err.Error())
 	}

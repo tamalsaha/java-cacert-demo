@@ -6,21 +6,13 @@ import (
 	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
 	"gomodules.xyz/cert"
 	corev1 "k8s.io/api/core/v1"
-	"kmodules.xyz/client-go/tools/configreader"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type CAGetterSecret struct {
-	reader configreader.ConfigReader
-	key    lib.ObjectRef
 }
 
 var _ lib.CAGetter = &CAGetterSecret{}
-
-func (c *CAGetterSecret) Init() error {
-	_, err := c.reader.Secrets(c.key.Namespace).Get(c.key.Name)
-	return err
-}
 
 func (c *CAGetterSecret) GetCAs(obj client.Object, key string) ([]*x509.Certificate, error) {
 	secret, ok := obj.(*corev1.Secret)
@@ -29,7 +21,7 @@ func (c *CAGetterSecret) GetCAs(obj client.Object, key string) ([]*x509.Certific
 	}
 	data, ok := secret.Data[key]
 	if !ok {
-		return nil, fmt.Errorf("missing key %s in secret %s/%s", key, c.key.Namespace, c.key.Name)
+		return nil, fmt.Errorf("missing key %s in secret %s/%s", key, obj.GetNamespace(), obj.GetName())
 	}
 	caCerts, _, err := cert.ParseRootCAs(data)
 	if err != nil {

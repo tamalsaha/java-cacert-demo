@@ -1,25 +1,21 @@
 package providers
 
 import (
+	"context"
 	"crypto/x509"
 	"fmt"
 	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
 	"gomodules.xyz/cert"
-	"kmodules.xyz/client-go/tools/configreader"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type CAGetterIssuer struct {
-	reader configreader.ConfigReader
-	key    lib.ObjectRef
+	reader client.Reader
 }
 
 var _ lib.CAGetter = &CAGetterIssuer{}
-
-func (c *CAGetterIssuer) Init() error {
-	return nil
-}
 
 func (c *CAGetterIssuer) GetCAs(obj client.Object, key string) ([]*x509.Certificate, error) {
 	issuer, ok := obj.(cmapi.GenericIssuer)
@@ -29,13 +25,19 @@ func (c *CAGetterIssuer) GetCAs(obj client.Object, key string) ([]*x509.Certific
 	if issuer.GetSpec().CA == nil {
 		return nil, fmt.Errorf("%v %s/%s does not have a CA", issuer.GetObjectKind().GroupVersionKind(), issuer.GetNamespace(), issuer.GetName())
 	}
-	secret, err := c.reader.Secrets(issuer.GetNamespace()).Get(issuer.GetName())
+
+	var secret corev1.Secret
+	secretRef := client.ObjectKey{
+		Namespace: issuer.GetNamespace(),
+		Name:      issuer.GetSpec().CA.SecretName,
+	}
+	err := c.reader.Get(context.TODO(), secretRef, &secret)
 	if err != nil {
 		return nil, err
 	}
 	data, ok := secret.Data[key]
 	if !ok {
-		return nil, fmt.Errorf("missing key %s in secret %s/%s", key, c.key.Namespace, c.key.Name)
+		return nil, fmt.Errorf("missing key %s in secret %s", key, secretRef)
 	}
 	caCerts, _, err := cert.ParseRootCAs(data)
 	if err != nil {

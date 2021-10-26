@@ -10,7 +10,6 @@ import (
 )
 
 type CAGetter interface {
-	Init() error
 	GetCAs(obj client.Object, key string) ([]*x509.Certificate, error)
 }
 
