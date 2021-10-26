@@ -19,5 +19,5 @@ spec:
       readOnly: true
       driver: csi.cert-manager.io
       volumeAttributes:
-        csi.cert-manager.io/issuer-name: mongo-ca-issuer
+        csi.cert-manager.io/issuer-name: ca-issuer
         csi.cert-manager.io/dns-names: my-service.demo.svc.cluster.local

@@ -6,7 +6,7 @@ metadata:
 spec:
   secretName: mycert-tls
   issuerRef:
-    name: mongo-ca-issuer
+    name: ca-issuer
   dnsNames:
   - '*.example.com'
   - example.com

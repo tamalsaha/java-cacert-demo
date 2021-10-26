@@ -1,3 +1,21 @@
+# cert-manager CSI Driver
+
+```
+$ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
+$ helm upgrade -i -n cert-manager cert-manager-csi-driver jetstack/cert-manager-csi-driver --wait
+
+$ kubectl create ns demo
+$ cd samples/ca-issuer
+$ kubectl create secret tls ca \
+       --cert=ca.crt \
+       --key=ca.key \
+       --namespace=demo
+$ kubectl create -f issuer.yaml
+$ kubectl apply -f nginx.yaml
+```
+
+https://172.18.0.2:30789/
+
 # Testing cert-manager
 
 - Start off by generating you ca certificates using openssl.
@@ -13,7 +31,7 @@ kubectl create ns demo
 - Now create a ca-secret using the certificate files you have just generated.
 
 ```bash
-kubectl create secret tls mongo-ca \
+kubectl create secret tls ca \
      --cert=ca.crt \
      --key=ca.key \
      --namespace=demo
@@ -25,11 +43,11 @@ Now, create an `Issuer` using the `ca-secret` you have just created. The `YAML` 
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: mongo-ca-issuer
+  name: ca-issuer
   namespace: demo
 spec:
   ca:
-    secretName: mongo-ca
+    secretName: ca
 ```
 
 ```bash
@@ -42,7 +60,7 @@ kubectl create -f cert.yaml
 $ kubectl get secrets -n demo
 NAME                  TYPE                                  DATA   AGE
 default-token-tgjlz   kubernetes.io/service-account-token   3      10m
-mongo-ca              kubernetes.io/tls                     2      10m
+ca                    kubernetes.io/tls                     2      10m
 mycert-tls            kubernetes.io/tls                     3      5m33s
 
 $ kubectl view-secret -n demo mycert-tls
