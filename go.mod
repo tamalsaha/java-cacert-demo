@@ -3,6 +3,7 @@ module github.com/tamalsaha/java-cacert-demo
 go 1.17
 
 require (
+	github.com/go-logr/logr v0.4.0
 	github.com/hashicorp/vault/api v1.0.4
 	github.com/hashicorp/vault/sdk v0.1.13
 	github.com/jetstack/cert-manager v1.4.4
@@ -11,8 +12,8 @@ require (
 	k8s.io/api v0.22.0
 	k8s.io/apimachinery v0.21.4
 	k8s.io/client-go v0.22.0
-	kmodules.xyz/cert-manager-util v0.0.0-20211023101034-1ec2c54398b0
-	kmodules.xyz/client-go v0.0.0-20211023080224-88313b8deed7
+	k8s.io/klog/v2 v2.9.0
+	kmodules.xyz/client-go v0.0.0-20211026092610-da3b1b098674
 	kubeops.dev/csi-driver-cacerts v0.0.0-20211020013806-a560fe08a5b9
 	sigs.k8s.io/controller-runtime v0.9.0
 )
@@ -29,7 +30,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful v2.9.5+incompatible // indirect
 	github.com/evanphx/json-patch v4.11.0+incompatible // indirect
-	github.com/go-logr/logr v0.4.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.3 // indirect
 	github.com/go-openapi/jsonreference v0.19.3 // indirect
 	github.com/go-openapi/spec v0.19.5 // indirect
@@ -88,7 +88,6 @@ require (
 	k8s.io/apiextensions-apiserver v0.21.4 // indirect
 	k8s.io/apiserver v0.21.4 // indirect
 	k8s.io/component-base v0.22.0 // indirect
-	k8s.io/klog/v2 v2.9.0 // indirect
 	k8s.io/kube-aggregator v0.21.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7 // indirect
 	k8s.io/utils v0.0.0-20210819203725-bdf08cb9a70a // indirect

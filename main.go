@@ -2,26 +2,29 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	cmv1_api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	cmv1_cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1"
+	keystore "github.com/pavel-v-chernykh/keystore-go/v4"
+	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
+	"gomodules.xyz/cert"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
+	cacerts_api "kubeops.dev/csi-driver-cacerts/apis/cacerts/v1alpha1"
 	"log"
 	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	cmv1_api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	cmv1_cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1"
-	keystore "github.com/pavel-v-chernykh/keystore-go/v4"
-	"gomodules.xyz/cert"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
-	cacerts_api "kubeops.dev/csi-driver-cacerts/apis/cacerts/v1alpha1"
 )
 
 const selfsigned_crt = `-----BEGIN CERTIFICATE-----
@@ -84,42 +87,29 @@ HTUsNM2cNy69KwgxR0KA4H6mFEoPWlk8ojFTSxCIieWzsv95Pdm6
 -----END CERTIFICATE-----
 `
 
-type CAGetter interface {
-	Init() error
-	GetCAs(key string) ([]*x509.Certificate, error)
-}
-
-type ObjectReference struct {
-	APIGroup  string `json:"apiGroup"`
-	Kind      string `json:"kind"`
-	Namespace string `json:"namespace,omitempty"`
-	Name      string `json:"name"`
-	Key       string `json:"key,omitempty"`
-}
-
-type ObjectKey struct {
-	APIGroup  string `json:"apiGroup"`
-	Kind      string `json:"kind"`
-	Namespace string `json:"namespace,omitempty"`
-	Name      string `json:"name"`
-	Key       string `json:"key,omitempty"`
-}
-
-var caCahce = map[ObjectKey][]*x509.Certificate{}
-var caGetterFactory = map[schema.GroupKind]CAGetter{}
+var caCahce = map[lib.ObjectRef][]*x509.Certificate{}
+var caGetterFactory = map[schema.GroupKind]lib.CAGetter{}
 
 func main() {
 	var pc cacerts_api.CAProviderClass
 	fmt.Println(pc)
 
+	certs := map[string]*x509.Certificate{}
+
 	var c client.Client
-	for _, ref := range pc.Spec.Refs {
-		fmt.Println(ref)
+	for _, typedRef := range pc.Spec.Refs {
+		ref := lib.RefFrom(pc, typedRef)
+		obj, err := lib.GetObj(c, ref)
+		if err != nil {
+			panic(err)
+		}
+		if gi, ok := obj.(cmv1_api.GenericIssuer); ok {
+
+		}
+
 	}
+
 }
-
-
-
 
 func main22() {
 	caCerts, certs, err := cert.ParseRootCAs([]byte(selfsigned_ca_crt))

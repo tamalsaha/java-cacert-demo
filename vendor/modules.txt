@@ -196,7 +196,6 @@ github.com/jetstack/cert-manager/pkg/logs
 github.com/jetstack/cert-manager/pkg/metrics
 github.com/jetstack/cert-manager/pkg/util
 github.com/jetstack/cert-manager/pkg/util/errors
-github.com/jetstack/cert-manager/pkg/util/kube
 github.com/jetstack/cert-manager/pkg/util/pki
 github.com/jetstack/cert-manager/pkg/util/profiling
 github.com/jetstack/cert-manager/test/unit/gen
@@ -812,11 +811,8 @@ k8s.io/utils/integer
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/cert-manager-util v0.0.0-20211023101034-1ec2c54398b0
+# kmodules.xyz/client-go v0.0.0-20211026092610-da3b1b098674
 ## explicit; go 1.17
-kmodules.xyz/cert-manager-util/reader
-# kmodules.xyz/client-go v0.0.0-20211023080224-88313b8deed7
-## explicit; go 1.12
 kmodules.xyz/client-go/tools/configreader
 # kubeops.dev/csi-driver-cacerts v0.0.0-20211020013806-a560fe08a5b9
 ## explicit; go 1.17
