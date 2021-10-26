@@ -11,6 +11,8 @@ import (
 	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
 	"github.com/zeebo/xxh3"
 	"gomodules.xyz/cert"
+	"io"
+	"io/ioutil"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -23,6 +25,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	atomic_writer "gomodules.xyz/atomic-writer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -147,7 +150,77 @@ func main() {
 		}
 	}
 
+	/*
+		/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/ca-certificates.crt
+		/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/java/cacerts
 
+	*/
+
+	filename := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/java/cacerts"
+	f, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	ks := keystore.New()
+	if err := ks.Load(f, []byte("changeit")); err != nil {
+		panic(err)
+	}
+	for _, alias := range ks.Aliases() {
+		if crt, err := ks.GetTrustedCertificateEntry(alias); err != nil {
+			panic(err)
+		} else {
+			fmt.Printf("%s: %s %s\n", alias, crt.Certificate.Type, crt.CreationTime)
+		}
+	}
+	for caId, ca := range certs {
+		err := ks.SetTrustedCertificateEntry(fmt.Sprintf("%d", caId), keystore.TrustedCertificateEntry{
+			CreationTime: ca.NotBefore,
+			Certificate: keystore.Certificate{
+				Type:    "",
+				Content: ca.Raw,
+			},
+		})
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	var javaBuf bytes.Buffer
+	if err := ks.Store(&javaBuf, []byte("changeit")); err != nil {
+		panic(err)
+	}
+
+	var caBuf bytes.Buffer
+	f2, err := os.Open("/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/ca-certificates.crt")
+	if err != nil {
+		panic(err)
+	}
+	defer f2.Close()
+	if _, err := io.Copy(&caBuf, f); err != nil {
+		panic(err)
+	}
+	for _, ca := range certs {
+		block := pem.Block{
+			Type:  cert.CertificateBlockType,
+			Bytes: ca.Raw,
+		}
+		err := pem.Encode(&caBuf, &block)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	writerContext := "ca-provider-csi-driver-ctx"
+	certWriter, err := atomic_writer.NewAtomicWriter("/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/output", writerContext)
+	if err != nil {
+		return
+	}
+	certWriter.Write(map[string]atomic_writer.FileProjection{
+		"ca-certificates.crt": {Data: caBuf.Bytes()},
+		"java/cacerts":        {Data: javaBuf.Bytes()},
+	})
 }
 
 func main22() {
@@ -252,7 +325,7 @@ func main3() {
 }
 
 func main34() {
-	filename := "/home/tamal/go/src/kubeops.dev/csi-driver-ca-certificates/examples/cacerts/etc/ssl/certs/java/cacerts"
+	filename := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/java/cacerts"
 	f, err := os.Open(filename)
 	if err != nil {
 		panic(err)
@@ -270,4 +343,5 @@ func main34() {
 			fmt.Printf("%s: %s %s\n", alias, crt.Certificate.Type, crt.CreationTime)
 		}
 	}
+
 }

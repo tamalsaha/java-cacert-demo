@@ -252,12 +252,18 @@ golang.org/x/text/width
 # golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 ## explicit
 golang.org/x/time/rate
+# gomodules.xyz/atomic-writer v0.0.2
+## explicit; go 1.16
+gomodules.xyz/atomic-writer
 # gomodules.xyz/cert v1.4.1
 ## explicit; go 1.17
 gomodules.xyz/cert
 # gomodules.xyz/jsonpatch/v2 v2.2.0
 ## explicit; go 1.12
 gomodules.xyz/jsonpatch/v2
+# gomodules.xyz/sets v0.2.0
+## explicit; go 1.14
+gomodules.xyz/sets
 # google.golang.org/appengine v1.6.7
 ## explicit; go 1.11
 google.golang.org/appengine/internal

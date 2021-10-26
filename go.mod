@@ -9,6 +9,7 @@ require (
 	github.com/jetstack/cert-manager v1.4.4
 	github.com/pavel-v-chernykh/keystore-go/v4 v4.1.0
 	github.com/zeebo/xxh3 v1.0.0-rc3
+	gomodules.xyz/atomic-writer v0.0.2
 	gomodules.xyz/cert v1.4.1
 	k8s.io/api v0.22.0
 	k8s.io/apimachinery v0.21.4
@@ -73,6 +74,7 @@ require (
 	golang.org/x/text v0.3.6 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
+	gomodules.xyz/sets v0.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect

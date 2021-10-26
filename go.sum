@@ -840,6 +840,8 @@ golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 h1:go1bK/D/BFZV2I8cIQd1NKEZ+0owSTG1fDTci4IqFcE=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
+gomodules.xyz/atomic-writer v0.0.2 h1:UXzHZylq5bsrmsScJAx923+3NBcX3yPfqFtj6ypn9JA=
+gomodules.xyz/atomic-writer v0.0.2/go.mod h1:FO58qUk5UoXwTWbrErUkFVjQARn/BqjdMCuWXkjsQy8=
 gomodules.xyz/blobfs v0.1.7/go.mod h1:DTBwaFUwRuDuk/rqpmgINkmo1fQR8oNMjj1DihfCpg4=
 gomodules.xyz/cert v1.4.1 h1:e9MVAbPHZIGpvtDRuLGe1Ee7PVi9+OgjAUR9/2P4s1E=
 gomodules.xyz/cert v1.4.1/go.mod h1:qzqrMpjMmCS91v8CHwlodVtvrQQZBYtUbuq8X4TFnOo=
@@ -851,7 +853,9 @@ gomodules.xyz/jsonpatch/v2 v2.2.0/go.mod h1:WXp+iVDkoLQqPudfQ9GBlwB2eZ5DKOnjQZCY
 gomodules.xyz/mergo v0.3.13-0.20210702100041-9d62ff8ece4d/go.mod h1:i2WNHvGpzLKI+/qWRhscddeashtzrtxCAucS2H7hrtM=
 gomodules.xyz/password-generator v0.2.7/go.mod h1:TvwYYTx9+P1pPwKQKfZgB/wr2Id9MqAQ3B5auY7reNg=
 gomodules.xyz/pointer v0.1.0/go.mod h1:sPLsC0+yLTRecUiC5yVlyvXhZ6LAGojNCRWNNqoplvo=
+gomodules.xyz/sets v0.0.0-20210218105342-2efe2fb519a2/go.mod h1:jKgNp01/iDs+svOWXaPk5cKP3VXy0mWUoTF/ore+aMc=
 gomodules.xyz/sets v0.1.0/go.mod h1:jKgNp01/iDs+svOWXaPk5cKP3VXy0mWUoTF/ore+aMc=
+gomodules.xyz/sets v0.2.0 h1:T8YPBWDaPGh/+HBjfL2JYdWeNqxNMoMofEdlvhLKE9w=
 gomodules.xyz/sets v0.2.0/go.mod h1:jKgNp01/iDs+svOWXaPk5cKP3VXy0mWUoTF/ore+aMc=
 gomodules.xyz/sets/kubernetes v0.2.0/go.mod h1:N17t2fAiJF2E3l78VmwyTO90BkOtNd/SQ/0X20K8wgM=
 gomodules.xyz/x v0.0.7/go.mod h1:CMXe28rpApV30pPw9cxdyEmvoC+aa5LiAqzks9dlxag=
