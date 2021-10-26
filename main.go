@@ -2,10 +2,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"github.com/tamalsaha/java-cacert-demo/pkg/getters"
 	"io"
+	"k8s.io/klog/v2"
 	"log"
 	"os"
 	"path/filepath"
@@ -102,9 +105,6 @@ var (
 )
 
 func main() {
-	var pc cacerts_api.CAProviderClass
-	fmt.Println(pc)
-
 	_ = cmv1_api.AddToScheme(scheme)
 	_ = cacerts_api.AddToScheme(scheme)
 
@@ -128,6 +128,17 @@ func main() {
 		panic(err)
 	}
 
+	var pc cacerts_api.CAProviderClass
+	err = c.Get(context.TODO(), client.ObjectKey{
+		Namespace: "demo",
+		Name:      "ca-provider",
+	}, &pc)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%+v\n", pc)
+	klog.Fatalln()
+
 	certs := map[uint64]*x509.Certificate{}
 	// https://stackoverflow.com/a/9104143
 	for _, typedRef := range pc.Spec.Refs {
@@ -137,7 +148,7 @@ func main() {
 			panic(err)
 		}
 
-		getter, err := lib.NewCAGetter(c, ref, obj)
+		getter, err := getters.NewCAGetter(c, ref, obj)
 		if err != nil {
 			panic(err)
 		}

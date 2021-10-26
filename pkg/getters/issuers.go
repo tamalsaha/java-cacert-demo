@@ -1,14 +1,15 @@
-package lib
+package getters
 
 import (
 	"fmt"
 	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
 	"github.com/tamalsaha/java-cacert-demo/pkg/getters/providers"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewCAGetter(c client.Client, ref ObjectRef, obj client.Object) (CAGetter, error) {
+func NewCAGetter(c client.Client, ref lib.ObjectRef, obj client.Object) (lib.CAGetter, error) {
 	switch ref.GVK() {
 	case corev1.SchemeGroupVersion.WithKind("Secret"):
 		return new(providers.CAGetterSecret), nil
