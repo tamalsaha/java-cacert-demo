@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"os"
@@ -212,14 +212,20 @@ func main() {
 	}
 
 	var caBuf bytes.Buffer
-	f2, err := os.Open("/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/ca-certificates.crt")
+	caData, err := ioutil.ReadFile("/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/ca-certificates.crt")
 	if err != nil {
 		panic(err)
 	}
-	defer f2.Close()
-	if _, err := io.Copy(&caBuf, f); err != nil {
-		panic(err)
-	}
+	caBuf.Write(caData)
+	//f2, err := os.Open("/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/ca-certificates.crt")
+	//if err != nil {
+	//	panic(err)
+	//}
+	//defer f2.Close()
+	//if _, err := io.Copy(&caBuf, f); err != nil {
+	//	panic(err)
+	//}
+
 	for _, ca := range certs {
 		block := pem.Block{
 			Type:  cert.CertificateBlockType,
@@ -232,13 +238,18 @@ func main() {
 	}
 
 	writerContext := "ca-provider-csi-driver-ctx"
-	certWriter, err := atomic_writer.NewAtomicWriter("/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/output", writerContext)
+	targetDir := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/output"
+	err = os.MkdirAll(targetDir, 0755)
+	if err != nil {
+		return
+	}
+	certWriter, err := atomic_writer.NewAtomicWriter(targetDir, writerContext)
 	if err != nil {
 		return
 	}
 	certWriter.Write(map[string]atomic_writer.FileProjection{
-		"ca-certificates.crt": {Data: caBuf.Bytes()},
-		"java/cacerts":        {Data: javaBuf.Bytes()},
+		"ca-certificates.crt": {Data: caBuf.Bytes(), Mode: 0400},
+		"java/cacerts":        {Data: javaBuf.Bytes(), Mode: 0400},
 	})
 }
 
