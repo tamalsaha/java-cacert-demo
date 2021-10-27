@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/tamalsaha/java-cacert-demo/pkg/providers"
+	clientx "kmodules.xyz/client-go/client"
 
 	cmv1_api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	cmscheme "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/scheme"
@@ -158,7 +159,7 @@ func main__() error {
 	// https://stackoverflow.com/a/9104143
 	for _, typedRef := range pc.Spec.Refs {
 		ref := cacerts_api.RefFrom(pc, typedRef)
-		obj, err := lib.GetObj(c, mapper, ref)
+		obj, err := clientx.GetForGK(c, mapper, ref.GroupKind(), ref.ObjKey())
 		if err != nil {
 			return err
 		}
