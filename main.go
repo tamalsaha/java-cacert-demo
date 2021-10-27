@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"os"
@@ -155,32 +156,46 @@ func main__() error {
 	}
 	fmt.Println(string(data))
 
-	certs := map[uint64]*x509.Certificate{}
-	// https://stackoverflow.com/a/9104143
-	for _, typedRef := range pc.Spec.Refs {
-		ref := cacerts_api.RefFrom(pc, typedRef)
-		obj, err := clientx.GetForGK(c, mapper, ref.GroupKind(), ref.ObjKey())
-		if err != nil {
-			return err
-		}
-
-		getter, err := providers.NewCAProvider(c, ref, obj)
-		if err != nil {
-			return err
-		}
-		cas, err := getter.GetCAs(obj, ref.Key)
-		if err != nil {
-			return err
-		}
-		for _, ca := range cas {
-			certs[xxh3.Hash(ca.Raw)] = ca
-		}
+	certs, err2 := fetchCAcerts(c, mapper, pc)
+	if err2 != nil {
+		return err2
 	}
 
 	srcDir := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs"
 	targetDir := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/output"
 	return UpdateCACerts(certs, srcDir, targetDir)
 }
+
+func fetchCAcerts(c client.Client, mapper meta.RESTMapper, caProviders ...cacerts_api.CAProviderClass) (map[uint64]*x509.Certificate, error) {
+	certs := map[uint64]*x509.Certificate{}
+	for _, pc := range caProviders {
+		for _, typedRef := range pc.Spec.Refs {
+			ref := cacerts_api.RefFrom(pc, typedRef)
+			obj, err := clientx.GetForGK(c, mapper, ref.GroupKind(), ref.ObjKey())
+			if err != nil {
+				return nil, err
+			}
+
+			p, err := providers.NewCAProvider(c, ref, obj)
+			if err != nil {
+				return nil, err
+			}
+			cas, err := p.GetCAs(obj, ref.Key)
+			if err != nil {
+				return nil, err
+			}
+			for _, ca := range cas {
+				// https://stackoverflow.com/a/9104143
+				certs[xxh3.Hash(ca.Raw)] = ca
+			}
+		}
+	}
+	return certs, nil
+}
+
+const cacertsGeneric = "ca-certificates.crt"
+const cacertsJava = "java/cacerts"
+var javaTrustStorePassword = []byte("changeit")
 
 func UpdateCACerts(certs map[uint64]*x509.Certificate, srcDir, targetDir string) error {
 	certIds := make([]uint64, 0, len(certs))
@@ -191,7 +206,7 @@ func UpdateCACerts(certs map[uint64]*x509.Certificate, srcDir, targetDir string)
 		return certIds[i] < certIds[j]
 	})
 
-	filename := filepath.Join(srcDir, "java/cacerts")
+	filename := filepath.Join(srcDir, cacertsJava)
 	f, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -199,7 +214,7 @@ func UpdateCACerts(certs map[uint64]*x509.Certificate, srcDir, targetDir string)
 	defer f.Close()
 
 	ks := keystore.New()
-	javaTrustStorePassword := []byte("changeit")
+
 	if err := ks.Load(f, javaTrustStorePassword); err != nil {
 		return err
 	}
@@ -230,7 +245,7 @@ func UpdateCACerts(certs map[uint64]*x509.Certificate, srcDir, targetDir string)
 	}
 
 	var caBuf bytes.Buffer
-	caData, err := ioutil.ReadFile(filepath.Join(srcDir, "ca-certificates.crt"))
+	caData, err := ioutil.ReadFile(filepath.Join(srcDir, cacertsGeneric))
 	if err != nil {
 		return err
 	}
@@ -257,8 +272,8 @@ func UpdateCACerts(certs map[uint64]*x509.Certificate, srcDir, targetDir string)
 		return err
 	}
 	_, err = certWriter.Write(map[string]atomic_writer.FileProjection{
-		"ca-certificates.crt": {Data: caBuf.Bytes(), Mode: 0400},
-		"java/cacerts":        {Data: javaBuf.Bytes(), Mode: 0400},
+		cacertsGeneric:           {Data: caBuf.Bytes(), Mode: 0400},
+		cacertsJava: {Data: javaBuf.Bytes(), Mode: 0400},
 	})
 	if err != nil {
 		return err
