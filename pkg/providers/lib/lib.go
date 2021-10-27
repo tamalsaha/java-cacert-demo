@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	cacerts_api "kubeops.dev/csi-driver-cacerts/apis/cacerts/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -44,8 +45,8 @@ func (ref ObjectRef) GroupKind() schema.GroupKind {
 	return schema.GroupKind{Group: ref.APIGroup, Kind: ref.Kind}
 }
 
-func (ref ObjectRef) ObjKey() client.ObjectKey {
-	return client.ObjectKey{
+func (ref ObjectRef) ObjKey() types.NamespacedName {
+	return types.NamespacedName{
 		Namespace: ref.Namespace,
 		Name:      ref.Name,
 	}

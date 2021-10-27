@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -108,6 +109,12 @@ var (
 )
 
 func main() {
+	if err := main__(); err != nil {
+		panic(err)
+	}
+}
+
+func main__() error {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = cmscheme.AddToScheme(scheme)
 	_ = cacerts_api.AddToScheme(scheme)
@@ -117,7 +124,7 @@ func main() {
 
 	mapper, err := apiutil.NewDynamicRESTMapper(cfg)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	c, err := client.New(cfg, client.Options{
@@ -129,7 +136,7 @@ func main() {
 		},
 	})
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	var pc cacerts_api.CAProviderClass
@@ -138,12 +145,12 @@ func main() {
 		Name:      "ca-provider",
 	}, &pc)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	data, err := json.MarshalIndent(pc, "", "  ")
 	if err != nil {
-		panic(err)
+		return err
 	}
 	fmt.Println(string(data))
 
@@ -153,16 +160,16 @@ func main() {
 		ref := lib.RefFrom(pc, typedRef)
 		obj, err := lib.GetObj(c, mapper, ref)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		getter, err := providers.NewCAProvider(c, ref, obj)
 		if err != nil {
-			panic(err)
+			return err
 		}
 		cas, err := getter.GetCAs(obj, ref.Key)
 		if err != nil {
-			panic(err)
+			return err
 		}
 		for _, ca := range cas {
 			certs[xxh3.Hash(ca.Raw)] = ca
@@ -172,29 +179,37 @@ func main() {
 	/*
 		/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/ca-certificates.crt
 		/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/java/cacerts
-
 	*/
+
+	certIds := make([]uint64, 0, len(certs))
+	for id := range certs {
+		certIds = append(certIds, id)
+	}
+	sort.Slice(certIds, func(i, j int) bool {
+		return certIds[i] < certIds[j]
+	})
 
 	filename := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/java/cacerts"
 	f, err := os.Open(filename)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer f.Close()
 
 	ks := keystore.New()
 	if err := ks.Load(f, []byte("changeit")); err != nil {
-		panic(err)
+		return err
 	}
 	for _, alias := range ks.Aliases() {
 		if crt, err := ks.GetTrustedCertificateEntry(alias); err != nil {
-			panic(err)
+			return err
 		} else {
 			fmt.Printf("%s: %s %s\n", alias, crt.Certificate.Type, crt.CreationTime)
 		}
 	}
-	for caId, ca := range certs {
-		err := ks.SetTrustedCertificateEntry(fmt.Sprintf("%d", caId), keystore.TrustedCertificateEntry{
+	for _, certId := range certIds {
+		ca := certs[certId]
+		err := ks.SetTrustedCertificateEntry(fmt.Sprintf("%d", certId), keystore.TrustedCertificateEntry{
 			CreationTime: ca.NotBefore,
 			Certificate: keystore.Certificate{
 				Type:    "X.509",
@@ -202,38 +217,39 @@ func main() {
 			},
 		})
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 
 	var javaBuf bytes.Buffer
 	if err := ks.Store(&javaBuf, []byte("changeit")); err != nil {
-		panic(err)
+		return err
 	}
 
 	var caBuf bytes.Buffer
 	caData, err := ioutil.ReadFile("/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/ca-certificates.crt")
 	if err != nil {
-		panic(err)
+		return err
 	}
 	caBuf.Write(caData)
 	//f2, err := os.Open("/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/ca-certificates.crt")
 	//if err != nil {
-	//	panic(err)
+	//	return err
 	//}
 	//defer f2.Close()
 	//if _, err := io.Copy(&caBuf, f); err != nil {
-	//	panic(err)
+	//	return err
 	//}
 
-	for _, ca := range certs {
+	for _, certId := range certIds {
+		ca := certs[certId]
 		block := pem.Block{
 			Type:  cert.CertificateBlockType,
 			Bytes: ca.Raw,
 		}
 		err := pem.Encode(&caBuf, &block)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 
@@ -247,16 +263,19 @@ func main() {
 	if err != nil {
 		return
 	}
-	certWriter.Write(map[string]atomic_writer.FileProjection{
+	_, err = certWriter.Write(map[string]atomic_writer.FileProjection{
 		"ca-certificates.crt": {Data: caBuf.Bytes(), Mode: 0400},
 		"java/cacerts":        {Data: javaBuf.Bytes(), Mode: 0400},
 	})
+	if err != nil {
+		return
+	}
 }
 
 func main22() {
 	caCerts, certs, err := cert.ParseRootCAs([]byte(selfsigned_ca_crt))
 	if err != nil {
-		panic(err)
+		return err
 	}
 	for _, c := range caCerts {
 		fmt.Println("ca", c.SerialNumber.String(), c.Subject.String())
@@ -269,7 +288,7 @@ func main22() {
 func main_selfsigned_crt() {
 	caCerts, certs, err := cert.ParseRootCAs([]byte(selfsigned_crt))
 	if err != nil {
-		panic(err)
+		return err
 	}
 	for _, c := range caCerts {
 		fmt.Println("ca", c.SerialNumber.String(), c.Subject.String())
@@ -297,7 +316,7 @@ func main00() {
 
 	caCerts, _, err := cert.ParseRootCAs([]byte(ca_crt))
 	if err != nil {
-		panic(err)
+		return err
 	}
 	for _, c := range caCerts {
 		fmt.Println(c.SerialNumber.String(), c.Subject.String())
@@ -358,17 +377,17 @@ func main34() {
 	filename := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/java/cacerts"
 	f, err := os.Open(filename)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer f.Close()
 
 	ks := keystore.New()
 	if err := ks.Load(f, []byte("changeit")); err != nil {
-		panic(err)
+		return err
 	}
 	for _, alias := range ks.Aliases() {
 		if crt, err := ks.GetTrustedCertificateEntry(alias); err != nil {
-			panic(err)
+			return err
 		} else {
 			fmt.Printf("%s: %s %s\n", alias, crt.Certificate.Type, crt.CreationTime)
 		}
