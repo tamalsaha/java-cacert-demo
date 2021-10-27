@@ -100,7 +100,7 @@ HTUsNM2cNy69KwgxR0KA4H6mFEoPWlk8ojFTSxCIieWzsv95Pdm6
 -----END CERTIFICATE-----
 `
 
-var caCahce = map[lib.ObjectRef][]*x509.Certificate{}
+var caCahce = map[cacerts_api.ObjectRef][]*x509.Certificate{}
 var caGetterFactory = map[schema.GroupKind]lib.CAProvider{}
 
 var (
@@ -157,7 +157,7 @@ func main__() error {
 	certs := map[uint64]*x509.Certificate{}
 	// https://stackoverflow.com/a/9104143
 	for _, typedRef := range pc.Spec.Refs {
-		ref := lib.RefFrom(pc, typedRef)
+		ref := cacerts_api.RefFrom(pc, typedRef)
 		obj, err := lib.GetObj(c, mapper, ref)
 		if err != nil {
 			return err
@@ -257,25 +257,26 @@ func main__() error {
 	targetDir := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/output"
 	err = os.MkdirAll(targetDir, 0755)
 	if err != nil {
-		return
+		return err
 	}
 	certWriter, err := atomic_writer.NewAtomicWriter(targetDir, writerContext)
 	if err != nil {
-		return
+		return err
 	}
 	_, err = certWriter.Write(map[string]atomic_writer.FileProjection{
 		"ca-certificates.crt": {Data: caBuf.Bytes(), Mode: 0400},
 		"java/cacerts":        {Data: javaBuf.Bytes(), Mode: 0400},
 	})
 	if err != nil {
-		return
+		return err
 	}
+	return nil
 }
 
 func main22() {
 	caCerts, certs, err := cert.ParseRootCAs([]byte(selfsigned_ca_crt))
 	if err != nil {
-		return err
+		panic(err)
 	}
 	for _, c := range caCerts {
 		fmt.Println("ca", c.SerialNumber.String(), c.Subject.String())
@@ -288,7 +289,7 @@ func main22() {
 func main_selfsigned_crt() {
 	caCerts, certs, err := cert.ParseRootCAs([]byte(selfsigned_crt))
 	if err != nil {
-		return err
+		panic(err)
 	}
 	for _, c := range caCerts {
 		fmt.Println("ca", c.SerialNumber.String(), c.Subject.String())
@@ -316,7 +317,7 @@ func main00() {
 
 	caCerts, _, err := cert.ParseRootCAs([]byte(ca_crt))
 	if err != nil {
-		return err
+		panic(err)
 	}
 	for _, c := range caCerts {
 		fmt.Println(c.SerialNumber.String(), c.Subject.String())
@@ -377,17 +378,17 @@ func main34() {
 	filename := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/java/cacerts"
 	f, err := os.Open(filename)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	defer f.Close()
 
 	ks := keystore.New()
 	if err := ks.Load(f, []byte("changeit")); err != nil {
-		return err
+		panic(err)
 	}
 	for _, alias := range ks.Aliases() {
 		if crt, err := ks.GetTrustedCertificateEntry(alias); err != nil {
-			return err
+			panic(err)
 		} else {
 			fmt.Printf("%s: %s %s\n", alias, crt.Certificate.Type, crt.CreationTime)
 		}
