@@ -5,19 +5,19 @@ import (
 	"crypto/x509"
 	"fmt"
 	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
+	"github.com/tamalsaha/java-cacert-demo/pkg/providers/lib"
 	"gomodules.xyz/cert"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type CAGetterIssuer struct {
+type IssuerProvider struct {
 	Reader client.Reader
 }
 
-var _ lib.CAGetter = &CAGetterIssuer{}
+var _ lib.CAProvider = &IssuerProvider{}
 
-func (c *CAGetterIssuer) GetCAs(obj client.Object, _ string) ([]*x509.Certificate, error) {
+func (c *IssuerProvider) GetCAs(obj client.Object, _ string) ([]*x509.Certificate, error) {
 	issuer, ok := obj.(cmapi.GenericIssuer)
 	if !ok {
 		return nil, fmt.Errorf("%v %s/%s is not a GenericIssuer", obj.GetObjectKind().GroupVersionKind(), obj.GetNamespace(), obj.GetName())

@@ -14,37 +14,77 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package vault
+package providers
 
 import (
 	"crypto/x509"
 	"fmt"
-	"gomodules.xyz/cert"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	vaultinternal "github.com/tamalsaha/java-cacert-demo/pkg/internal/vault"
+	"github.com/tamalsaha/java-cacert-demo/pkg/providers/lib"
+	"gomodules.xyz/cert"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	successVaultVerified = "VaultVerified"
-	messageVaultVerified = "Vault verified"
+	messageVaultClientInitFailed         = "Failed to initialize VaultProvider client: "
+	messageVaultStatusVerificationFailed = "VaultProvider is not initialized or is sealed"
+	messageVaultConfigRequired           = "VaultProvider config cannot be empty"
+	messageServerAndPathRequired         = "VaultProvider server and path are required fields"
+	messageAuthFieldsRequired            = "VaultProvider tokenSecretRef, appRole, or kubernetes is required"
+	messageMultipleAuthFieldsSet         = "Multiple auth methods cannot be set on the same VaultProvider issuer"
 
-	errorVault = "VaultError"
-
-	messageVaultClientInitFailed         = "Failed to initialize Vault client: "
-	messageVaultStatusVerificationFailed = "Vault is not initialized or is sealed"
-	messageVaultConfigRequired           = "Vault config cannot be empty"
-	messageServerAndPathRequired         = "Vault server and path are required fields"
-	messageAuthFieldsRequired            = "Vault tokenSecretRef, appRole, or kubernetes is required"
-	messageMultipleAuthFieldsSet         = "Multiple auth methods cannot be set on the same Vault issuer"
-
-	messageKubeAuthFieldsRequired    = "Vault Kubernetes auth requires both role and secretRef.name"
-	messageTokenAuthNameRequired     = "Vault Token auth requires tokenSecretRef.name"
-	messageAppRoleAuthFieldsRequired = "Vault AppRole auth requires both roleId and tokenSecretRef.name"
+	messageKubeAuthFieldsRequired    = "VaultProvider Kubernetes auth requires both role and secretRef.name"
+	messageTokenAuthNameRequired     = "VaultProvider Token auth requires tokenSecretRef.name"
+	messageAppRoleAuthFieldsRequired = "VaultProvider AppRole auth requires both roleId and tokenSecretRef.name"
 )
 
-func (v *Vault) GetCAs(obj client.Object, _ string) ([]*x509.Certificate, error) {
+type VaultProvider struct {
+	reader client.Reader
+	opts   IssuerOptions
+
+	// Namespace in which to read resources related to this Issuer from.
+	// For Issuers, this will be the namespace of the Issuer.
+	// For ClusterIssuers, this will be the cluster resource namespace.
+	resourceNamespace string
+}
+
+func NewVault(c client.Reader, opts IssuerOptions) (lib.CAProvider, error) {
+	return &VaultProvider{
+		reader: c,
+		opts:   opts,
+	}, nil
+}
+
+//// Register this Issuer with the issuer factory
+//func init() {
+//	issuer.RegisterIssuer(apiutil.IssuerVault, NewVault)
+//}
+
+type IssuerOptions struct {
+	// ClusterResourceNamespace is the namespace to store resources created by
+	// non-namespaced resources (e.g. ClusterIssuer) in.
+	ClusterResourceNamespace string
+
+	// ClusterIssuerAmbientCredentials controls whether a cluster issuer should
+	// pick up ambient credentials, such as those from metadata services, to
+	// construct clients.
+	ClusterIssuerAmbientCredentials bool
+
+	// IssuerAmbientCredentials controls whether an issuer should pick up ambient
+	// credentials, such as those from metadata services, to construct clients.
+	IssuerAmbientCredentials bool
+}
+
+func (o IssuerOptions) ResourceNamespace(iss cmapi.GenericIssuer) string {
+	ns := iss.GetObjectMeta().Namespace
+	if ns == "" {
+		ns = o.ClusterResourceNamespace
+	}
+	return ns
+}
+
+func (v *VaultProvider) GetCAs(obj client.Object, _ string) ([]*x509.Certificate, error) {
 	issuer, ok := obj.(cmapi.GenericIssuer)
 	if !ok {
 		return nil, fmt.Errorf("%v %s/%s is not a GenericIssuer", obj.GetObjectKind().GroupVersionKind(), obj.GetNamespace(), obj.GetName())
@@ -54,7 +94,7 @@ func (v *Vault) GetCAs(obj client.Object, _ string) ([]*x509.Certificate, error)
 		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageVaultConfigRequired)
 	}
 
-	// check if Vault server info is specified.
+	// check if VaultProvider server info is specified.
 	if issuer.GetSpec().Vault.Server == "" ||
 		issuer.GetSpec().Vault.Path == "" {
 		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageServerAndPathRequired)
@@ -76,17 +116,17 @@ func (v *Vault) GetCAs(obj client.Object, _ string) ([]*x509.Certificate, error)
 		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageMultipleAuthFieldsSet)
 	}
 
-	// check if all mandatory Vault Token fields are set.
+	// check if all mandatory VaultProvider Token fields are set.
 	if tokenAuth != nil && len(tokenAuth.Name) == 0 {
 		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageTokenAuthNameRequired)
 	}
 
-	// check if all mandatory Vault appRole fields are set.
+	// check if all mandatory VaultProvider appRole fields are set.
 	if appRoleAuth != nil && (len(appRoleAuth.RoleId) == 0 || len(appRoleAuth.SecretRef.Name) == 0) {
 		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageAppRoleAuthFieldsRequired)
 	}
 
-	// check if all mandatory Vault Kubernetes fields are set.
+	// check if all mandatory VaultProvider Kubernetes fields are set.
 	if kubeAuth != nil && (len(kubeAuth.SecretRef.Name) == 0 || len(kubeAuth.Role) == 0) {
 		return nil, fmt.Errorf("%s: %s", issuer.GetObjectMeta().Name, messageKubeAuthFieldsRequired)
 	}

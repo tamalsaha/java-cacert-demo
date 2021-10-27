@@ -3,18 +3,18 @@ package providers
 import (
 	"crypto/x509"
 	"fmt"
-	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
+	"github.com/tamalsaha/java-cacert-demo/pkg/providers/lib"
 	"gomodules.xyz/cert"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type CAGetterSecret struct {
+type SecretProvider struct {
 }
 
-var _ lib.CAGetter = &CAGetterSecret{}
+var _ lib.CAProvider = &SecretProvider{}
 
-func (c *CAGetterSecret) GetCAs(obj client.Object, key string) ([]*x509.Certificate, error) {
+func (c *SecretProvider) GetCAs(obj client.Object, key string) ([]*x509.Certificate, error) {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
 		return nil, fmt.Errorf("%v %s/%s is not a Secret", obj.GetObjectKind().GroupVersionKind(), obj.GetNamespace(), obj.GetName())

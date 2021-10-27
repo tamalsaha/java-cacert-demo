@@ -17,13 +17,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tamalsaha/java-cacert-demo/pkg/getters"
+	"github.com/tamalsaha/java-cacert-demo/pkg/providers"
 
 	cmv1_api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	cmscheme "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/scheme"
 	cmv1_cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1"
 	keystore "github.com/pavel-v-chernykh/keystore-go/v4"
-	"github.com/tamalsaha/java-cacert-demo/pkg/getters/lib"
+	"github.com/tamalsaha/java-cacert-demo/pkg/providers/lib"
 	"github.com/zeebo/xxh3"
 	atomic_writer "gomodules.xyz/atomic-writer"
 	"gomodules.xyz/cert"
@@ -100,7 +100,7 @@ HTUsNM2cNy69KwgxR0KA4H6mFEoPWlk8ojFTSxCIieWzsv95Pdm6
 `
 
 var caCahce = map[lib.ObjectRef][]*x509.Certificate{}
-var caGetterFactory = map[schema.GroupKind]lib.CAGetter{}
+var caGetterFactory = map[schema.GroupKind]lib.CAProvider{}
 
 var (
 	scheme   = runtime.NewScheme()
@@ -156,7 +156,7 @@ func main() {
 			panic(err)
 		}
 
-		getter, err := getters.NewCAGetter(c, ref, obj)
+		getter, err := providers.NewCAProvider(c, ref, obj)
 		if err != nil {
 			panic(err)
 		}
