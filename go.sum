@@ -966,8 +966,8 @@ k8s.io/utils v0.0.0-20201110183641-67b214c5f920/go.mod h1:jPW/WVKK9YHAvNhRxK0md/
 kmodules.xyz/client-go v0.0.0-20210928133955-8df5bb467db6/go.mod h1:0gkPeALtYjB27OHt4rd6+ZmMgoVTHVLtEJQeU23/gtA=
 kmodules.xyz/client-go v0.0.0-20211027141155-5fc9e3e8d923 h1:fbMeK5dgXqtAWHHmKFZ5HCL4pOHsrO6EE3gNXp7GZMg=
 kmodules.xyz/client-go v0.0.0-20211027141155-5fc9e3e8d923/go.mod h1:ENUu8pPK19xzBkVpAJHoGCI2QRvb1SqffWRt0K2sV5I=
-kubeops.dev/csi-driver-cacerts v0.0.0-20211027135910-3bb2e738a5b4 h1:dgnl0K6ZTwQWvIL67rQayt37p+u3MxTZZdQ3MxWzvPU=
-kubeops.dev/csi-driver-cacerts v0.0.0-20211027135910-3bb2e738a5b4/go.mod h1:rF4nviw6GUymqBncOIeEcVCLuxZ1CYwwynafBe5uabc=
+kubeops.dev/csi-driver-cacerts v0.0.0-20211027144150-97b8e804d32c h1:6yDZQlMe1NmGkLf/rgW+S4MSn6kXFv5gqBdjdNQ363c=
+kubeops.dev/csi-driver-cacerts v0.0.0-20211027144150-97b8e804d32c/go.mod h1:rF4nviw6GUymqBncOIeEcVCLuxZ1CYwwynafBe5uabc=
 rsc.io/quote/v3 v3.1.0/go.mod h1:yEA65RcK8LyAZtP9Kv3t0HmxON59tX3rD+tICJqUlj0=
 rsc.io/sampler v1.3.0/go.mod h1:T1hPZKmBbMNahiBKFy5HrXp6adAjACjK9JXDnKaTXpA=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.15/go.mod h1:LEScyzhFmoF5pso/YSeBstl57mOzx9xlU9n85RGrDQg=

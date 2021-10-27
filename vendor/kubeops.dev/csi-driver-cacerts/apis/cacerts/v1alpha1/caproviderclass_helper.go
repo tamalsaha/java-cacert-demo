@@ -12,7 +12,6 @@ func (_ CAProviderClass) CustomResourceDefinition() *apiextensions.CustomResourc
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourceCAProviderClasses))
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type ObjectRef struct {
 	APIGroup  string `json:"apiGroup"`
 	Kind      string `json:"kind"`

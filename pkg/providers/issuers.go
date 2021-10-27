@@ -6,10 +6,11 @@ import (
 	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/tamalsaha/java-cacert-demo/pkg/providers/lib"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	cacerts_api "kubeops.dev/csi-driver-cacerts/apis/cacerts/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewCAProvider(c client.Client, ref lib.ObjectRef, obj client.Object) (lib.CAProvider, error) {
+func NewCAProvider(c client.Client, ref cacerts_api.ObjectRef, obj client.Object) (lib.CAProvider, error) {
 	switch ref.GroupKind() {
 	case schema.GroupKind{Kind: "Secret"}:
 		return new(SecretProvider), nil

@@ -177,11 +177,12 @@ func main__() error {
 		}
 	}
 
-	/*
-		/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/ca-certificates.crt
-		/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/java/cacerts
-	*/
+	srcDir := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs"
+	targetDir := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/output"
+	return UpdateCACerts(certs, srcDir, targetDir)
+}
 
+func UpdateCACerts(certs map[uint64]*x509.Certificate, srcDir, targetDir string) error {
 	certIds := make([]uint64, 0, len(certs))
 	for id := range certs {
 		certIds = append(certIds, id)
@@ -190,7 +191,7 @@ func main__() error {
 		return certIds[i] < certIds[j]
 	})
 
-	filename := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/java/cacerts"
+	filename := filepath.Join(srcDir, "java/cacerts")
 	f, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -198,7 +199,8 @@ func main__() error {
 	defer f.Close()
 
 	ks := keystore.New()
-	if err := ks.Load(f, []byte("changeit")); err != nil {
+	javaTrustStorePassword := []byte("changeit")
+	if err := ks.Load(f, javaTrustStorePassword); err != nil {
 		return err
 	}
 	for _, alias := range ks.Aliases() {
@@ -223,25 +225,16 @@ func main__() error {
 	}
 
 	var javaBuf bytes.Buffer
-	if err := ks.Store(&javaBuf, []byte("changeit")); err != nil {
+	if err := ks.Store(&javaBuf, javaTrustStorePassword); err != nil {
 		return err
 	}
 
 	var caBuf bytes.Buffer
-	caData, err := ioutil.ReadFile("/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/ca-certificates.crt")
+	caData, err := ioutil.ReadFile(filepath.Join(srcDir, "ca-certificates.crt"))
 	if err != nil {
 		return err
 	}
 	caBuf.Write(caData)
-	//f2, err := os.Open("/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/hack/examples/cacerts/etc/ssl/certs/ca-certificates.crt")
-	//if err != nil {
-	//	return err
-	//}
-	//defer f2.Close()
-	//if _, err := io.Copy(&caBuf, f); err != nil {
-	//	return err
-	//}
-
 	for _, certId := range certIds {
 		ca := certs[certId]
 		block := pem.Block{
@@ -254,8 +247,7 @@ func main__() error {
 		}
 	}
 
-	writerContext := "ca-provider-csi-driver-ctx"
-	targetDir := "/home/tamal/go/src/github.com/tamalsaha/java-cacert-demo/output"
+	writerContext := "ca-provider-csi-driver-ctx------------------------------------------------------------------" // include volumeID
 	err = os.MkdirAll(targetDir, 0755)
 	if err != nil {
 		return err

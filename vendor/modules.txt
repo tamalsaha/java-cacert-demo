@@ -689,7 +689,7 @@ kmodules.xyz/client-go/client
 kmodules.xyz/client-go/discovery
 kmodules.xyz/client-go/meta
 kmodules.xyz/client-go/tools/configreader
-# kubeops.dev/csi-driver-cacerts v0.0.0-20211027135910-3bb2e738a5b4
+# kubeops.dev/csi-driver-cacerts v0.0.0-20211027144150-97b8e804d32c
 ## explicit; go 1.17
 kubeops.dev/csi-driver-cacerts/apis/cacerts
 kubeops.dev/csi-driver-cacerts/apis/cacerts/v1alpha1
