@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	kerr "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
@@ -72,7 +71,11 @@ func isOfficialTypes(group string) bool {
 	return !strings.ContainsRune(group, '.')
 }
 
-func GetForGVK(c client.Client, gvk schema.GroupVersionKind, ref types.NamespacedName) (client.Object, error) {
+func GetForGVR(c client.Client, gvr schema.GroupVersionResource, ref types.NamespacedName) (client.Object, error) {
+	gvk, err := c.RESTMapper().KindFor(gvr)
+	if err != nil {
+		return nil, err
+	}
 	o, err := c.Scheme().New(gvk)
 	if err != nil {
 		return nil, err
@@ -82,12 +85,15 @@ func GetForGVK(c client.Client, gvk schema.GroupVersionKind, ref types.Namespace
 	return obj, err
 }
 
-func GetForGK(c client.Client, mapper meta.RESTMapper, gk schema.GroupKind, ref types.NamespacedName) (client.Object, error) {
-	mapping, err := mapper.RESTMapping(gk)
-	if err != nil {
-		return nil, err
+func GetForGVK(c client.Client, gvk schema.GroupVersionKind, ref types.NamespacedName) (client.Object, error) {
+	if gvk.Version == "" {
+		mapping, err := c.RESTMapper().RESTMapping(gvk.GroupKind())
+		if err != nil {
+			return nil, err
+		}
+		gvk = mapping.GroupVersionKind
 	}
-	o, err := c.Scheme().New(mapping.GroupVersionKind)
+	o, err := c.Scheme().New(gvk)
 	if err != nil {
 		return nil, err
 	}

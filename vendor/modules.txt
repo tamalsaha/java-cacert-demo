@@ -678,7 +678,7 @@ k8s.io/utils/clock
 k8s.io/utils/integer
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20211027141155-5fc9e3e8d923
+# kmodules.xyz/client-go v0.0.0-20211028132207-0cf6ea46b030
 ## explicit; go 1.17
 kmodules.xyz/client-go
 kmodules.xyz/client-go/api/v1
@@ -689,7 +689,7 @@ kmodules.xyz/client-go/client
 kmodules.xyz/client-go/discovery
 kmodules.xyz/client-go/meta
 kmodules.xyz/client-go/tools/configreader
-# kubeops.dev/csi-driver-cacerts v0.0.0-20211027144150-97b8e804d32c
+# kubeops.dev/csi-driver-cacerts v0.0.0-20211028132441-33db8b13aa4f
 ## explicit; go 1.17
 kubeops.dev/csi-driver-cacerts/apis/cacerts
 kubeops.dev/csi-driver-cacerts/apis/cacerts/v1alpha1

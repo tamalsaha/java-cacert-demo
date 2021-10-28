@@ -27,8 +27,11 @@ metadata:
 spec:
   containers:
   - name: main
-    # image: curlimages/curl
-    image: appscode/curl:canary
+    image: curlimages/curl
+    env:
+    - name: CURL_CA_BUNDLE
+      value: /etc/ssl/cert.pem
+    # image: appscode/curl:canary
     command:
     - sleep
     - "3600"

@@ -8,7 +8,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"os"
@@ -156,7 +155,7 @@ func main__() error {
 	}
 	fmt.Println(string(data))
 
-	certs, err2 := fetchCAcerts(c, mapper, pc)
+	certs, err2 := fetchCAcerts(c, pc)
 	if err2 != nil {
 		return err2
 	}
@@ -166,12 +165,12 @@ func main__() error {
 	return UpdateCACerts(certs, srcDir, targetDir)
 }
 
-func fetchCAcerts(c client.Client, mapper meta.RESTMapper, caProviders ...cacerts_api.CAProviderClass) (map[uint64]*x509.Certificate, error) {
+func fetchCAcerts(c client.Client, caProviders ...cacerts_api.CAProviderClass) (map[uint64]*x509.Certificate, error) {
 	certs := map[uint64]*x509.Certificate{}
 	for _, pc := range caProviders {
 		for _, typedRef := range pc.Spec.Refs {
 			ref := cacerts_api.RefFrom(pc, typedRef)
-			obj, err := clientx.GetForGK(c, mapper, ref.GroupKind(), ref.ObjKey())
+			obj, err := clientx.GetForGVK(c, ref.GroupKind().WithVersion(""), ref.ObjKey())
 			if err != nil {
 				return nil, err
 			}
