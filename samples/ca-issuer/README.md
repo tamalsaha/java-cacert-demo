@@ -6,6 +6,7 @@ $ helm upgrade -i -n cert-manager cert-manager-csi-driver jetstack/cert-manager-
 
 $ kubectl create ns demo
 $ cd samples/ca-issuer
+$ openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ./ca.key -out ./ca.crt -subj "/CN=mongo/O=kubedb"
 $ kubectl create secret tls ca \
        --cert=ca.crt \
        --key=ca.key \
@@ -21,6 +22,10 @@ $ cd ~/go/src/kubeops.dev/csi-driver-cacerts
 $ kubectl apply -f crds/cacerts.csi.cert-manager.io_caproviderclasses.yaml
 
 $ kubectl apply -f curl.yaml
+$ watch kubectl get pods -n demo
+
+$ kubectl exec -it curl -- bash
+root@curl:/# curl https://nginx.demo.svc.cluster.local
 ```
 
 # Testing cert-manager
@@ -28,7 +33,7 @@ $ kubectl apply -f curl.yaml
 - Start off by generating you ca certificates using openssl.
 
 ```bash
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./ca.key -out ./ca.crt -subj "/CN=mongo/O=kubedb"
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ./ca.key -out ./ca.crt -subj "/CN=mongo/O=kubedb"
 ```
 
 ```bash
